@@ -6,9 +6,9 @@
 - [x] Pydantic schemas (`src/schemas.py`) and dataset scripts (`scripts/00`–`04`) implemented
 - [x] Local Conda environment (`presenter-ai`) set up with PyTorch CUDA 12.8 for RTX 5060 Laptop (verified GPU pipeline end-to-end)
 - [x] Initial real presentation video data extracted & processed for `vn_01` (6.0 min, 40 clips) and `vn_02` (4.5 min, 30 clips) with individualized `style_profile.json`
+- [x] Stage 1 (`src/humanizer.py`), Stage 2 (`src/synthesizer.py` Zero-Shot + LoRA-ready F5-TTS), and local Gradio UI (`app/web_ui.py`) working end-to-end
 - [ ] QA-verify `metadata.jsonl` + record additional speech to reach 30–60 min for deep `vn_01` LoRA fine-tuning
 - [ ] Cloud RTX 4090 fine-tuning script (`scripts/05_train_lora_cloud.py`) + first `vn_01` LoRA trained and validated
-- [ ] Stage 1 (`src/humanizer.py`), Stage 2 (`src/synthesizer.py`), and local Gradio UI (`app/web_ui.py`) working end-to-end
 
 ## Phase 2 — Multi-Accent Expansion
 - [ ] Onboard `speaker_02` (collaborator) and validate zero accent/filler bleed between speakers

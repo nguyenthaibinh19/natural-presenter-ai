@@ -19,6 +19,9 @@ whisperx>=3.1.5
 # Stage 1: Script Humanizer (LLM client - OpenAI-compatible: OpenAI, Gemini, Ollama, etc.)
 openai>=1.50.0
 
+# Stage 2: Voice Synthesis (F5-TTS)
+f5-tts>=1.1.0
+
 # Web UI (Phase 1 Local App)
 gradio>=4.44.0
 

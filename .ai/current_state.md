@@ -17,24 +17,26 @@
 
 ### Code Implemented
 - `src/schemas.py` — Pydantic v2 data contracts (`DatasetClip`, `PauseEvent`, `StyleProfile`, `FewShotExample`, `HumanizeRequest`, `HumanizeResponse`, `SynthesizeRequest`) + JSONL/JSON persistence helpers.
+- `src/humanizer.py` — Stage 1 Personalized Script Humanizer (LLM mode via OpenAI-compatible API + zero-setup offline profile mode using each speaker's `style_profile.json`).
+- `src/synthesizer.py` — Stage 2 F5-TTS synthesizer supporting Zero-Shot reference clips (`refs/presentation_ref.wav`) and automatic per-speaker checkpoint/LoRA loading (`lora/`) with chunking & smooth audio stitching.
+- `app/web_ui.py` — Local Gradio Web UI (`http://127.0.0.1:7860`) with speaker selector (`Binh (vn_01)`, `Ege (vn_02)`), filler intensity radio (`None/Low/Medium/High`), editable Stage 1 script box, and inline audio playback.
+- `scripts/00_extract_diarize_video.py` — Offline FFmpeg + Silero VAD + SpeechBrain ECAPA-TDNN speaker separation for multi-speaker videos.
 - `scripts/01_preprocess_audio.py` — 24kHz mono WAV conversion, peak normalization (no aggressive noise gate), Silero VAD slicing (3–12s with 150ms padding).
-- `scripts/02_transcribe_align.py` — `faster-whisper` transcription with disfluency-preserving prompt, word-level pause detection (`[pause_short]`, `[pause_long]`), and filler density classification.
+- `scripts/02_transcribe_align.py` — `faster-whisper` transcription with disfluency-preserving prompt, Windows CUDA DLL registration, word-level pause detection, and filler density classification.
 - `scripts/03_build_dataset_labels.py` — LLM-assisted (OpenAI-compatible) + `--heuristic` offline fallback generator for `clean_text` pairs and `tone`.
 - `scripts/04_extract_style_profile.py` — Extracts WPM, pause cadence, normalized `filler_distribution`, and few-shot examples into `style_profile.json`.
-- `requirements.txt` — Core dependencies with RTX 5060 CUDA 12.8 note.
+- `requirements.txt` — Core dependencies including `f5-tts` and RTX 5060 CUDA 12.8 note.
 
 ### Local Environment Status (Primary Dev Machine)
 - **GPU:** NVIDIA GeForce RTX 5060 Laptop GPU (`8151 MiB` VRAM, Driver `610.71`, Blackwell `sm_120`).
-- **Conda Environment Configured:** `presenter-ai` (`C:\Users\mrbin\miniconda3\envs\presenter-ai`) with Python 3.11.18, FFmpeg 9.1.0, `torch==2.11.0+cu128`, `torchaudio==2.11.0+cu128`, `faster-whisper==1.2.1`, `silero-vad==6.3`, `gradio==6.32.0`, `pydantic==2.14.4`. Verified `torch.cuda.is_available() == True`.
+- **Conda Environment Configured:** `presenter-ai` (`C:\Users\mrbin\miniconda3\envs\presenter-ai`) with Python 3.11.18, FFmpeg 9.1.0, `torch==2.11.0+cu128`, `torchaudio==2.11.0+cu128`, `f5-tts==1.1.22`, `faster-whisper==1.2.1`, `silero-vad==6.3`, `gradio==6.32.0`, `pydantic==2.14.4`. Verified `torch.cuda.is_available() == True`.
 - **Initial Real Dataset Processed (from 2 presentation videos):**
-  - `vn_01`: 40 WAV clips (6.0 min), `metadata.jsonl` & `style_profile.json` generated (`109.1 WPM`, fillers: `uh: 90.7%`, `like: 9.3%`, 10 few-shot examples).
-  - `vn_02`: 30 WAV clips (4.5 min), `metadata.jsonl` & `style_profile.json` generated (`146.6 WPM`, fillers: `uh: 79.4%`, `eh: 11.8%`, `um: 8.8%`, 9 few-shot examples).
-- **Additional Script Added:** `scripts/00_extract_diarize_video.py` (offline FFmpeg + Silero VAD + SpeechBrain ECAPA-TDNN speaker separation for future multi-speaker videos).
+  - `vn_01` (**Binh**): 40 WAV clips (6.0 min), curated ref clip `refs/presentation_ref.wav` (10.3s), `metadata.jsonl` & `style_profile.json` (`109.1 WPM`, fillers: `uh: 90.7%`, `like: 9.3%`, 10 few-shot examples).
+  - `vn_02` (**Ege**): 30 WAV clips (4.5 min), curated ref clip `refs/presentation_ref.wav` (10.15s), `metadata.jsonl` & `style_profile.json` (`146.6 WPM`, fillers: `uh: 79.4%`, `eh: 11.8%`, `um: 8.8%`, 9 few-shot examples).
 
 ---
 
 ## What Does NOT Exist Yet (Next Up)
-1. Human QA review of `vn_01`/`vn_02` `metadata.jsonl` + additional recording to reach 30–60 min for deep LoRA fine-tuning (current 6 min is great for MVP smoke tests and zero-shot F5-TTS testing).
-2. `src/humanizer.py` — Stage 1 Personalized Script Humanizer (LLM + `style_profile.json`).
+1. Listen-test Zero-Shot F5-TTS output for Binh (`vn_01`) and Ege (`vn_02`) via local Web UI (`http://127.0.0.1:7860`).
+2. Human QA review of `vn_01`/`vn_02` `metadata.jsonl` + additional recording to reach 30–60 min if Zero-Shot accent/filler fidelity needs LoRA fine-tuning.
 3. `scripts/05_train_lora_cloud.py` — Cloud RTX 4090 F5-TTS LoRA fine-tuning script/notebook.
-4. `src/synthesizer.py` & `app/web_ui.py` — Stage 2 F5-TTS inference + local Gradio Web UI.
