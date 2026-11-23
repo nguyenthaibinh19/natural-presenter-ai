@@ -17,9 +17,11 @@
 
 ### Code Implemented
 - `src/schemas.py` — Pydantic v2 data contracts (`DatasetClip`, `PauseEvent`, `StyleProfile`, `FewShotExample`, `HumanizeRequest`, `HumanizeResponse`, `SynthesizeRequest`) + JSONL/JSON persistence helpers.
-- `src/humanizer.py` — Stage 1 Personalized Script Humanizer (LLM mode via OpenAI-compatible API + zero-setup offline profile mode using each speaker's `style_profile.json`).
+- `src/humanizer.py` — Stage 1 Personalized Script Humanizer defaulting to local **Ollama/Gemma (`gemma3:4b`)** (`http://localhost:11434/v1`) with graceful offline profile fallback (`ADR-005`).
 - `src/synthesizer.py` — Stage 2 F5-TTS synthesizer supporting Zero-Shot reference clips (`refs/presentation_ref.wav`) and automatic per-speaker checkpoint/LoRA loading (`lora/`) with chunking & smooth audio stitching.
-- `app/web_ui.py` — Local Gradio Web UI (`http://127.0.0.1:7860`) with speaker selector (`Binh (vn_01)`, `Ege (vn_02)`), filler intensity radio (`None/Low/Medium/High`), editable Stage 1 script box, and inline audio playback.
+- `app/web_ui.py` — Local Gradio Web UI (`http://127.0.0.1:7860`) with two tabs: **Presentation Studio** (Stage 1 + Stage 2) and **Dataset QA Reviewer** (listen, edit `raw_text`/`clean_text`, mark `verified`, rebuild `style_profile.json`).
+- `scripts/05_train_cloud.py` — Prepares F5-TTS fine-tuning dataset (`metadata.csv`, `duration.json`) and invokes `f5-tts_finetune-cli` with character tokenizer (`--tokenizer char`) for Cloud RTX 4090 training.
+- `.env.example` — Default Ollama/Gemma Stage 1 configuration template.
 - `scripts/00_extract_diarize_video.py` — Offline FFmpeg + Silero VAD + SpeechBrain ECAPA-TDNN speaker separation for multi-speaker videos.
 - `scripts/01_preprocess_audio.py` — 24kHz mono WAV conversion, peak normalization (no aggressive noise gate), Silero VAD slicing (3–12s with 150ms padding).
 - `scripts/02_transcribe_align.py` — `faster-whisper` transcription with disfluency-preserving prompt, Windows CUDA DLL registration, word-level pause detection, and filler density classification.

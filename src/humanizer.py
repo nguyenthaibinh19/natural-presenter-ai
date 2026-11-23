@@ -133,21 +133,21 @@ def humanize_script(
     profiles_root: Path = Path("profiles"),
     llm_model: str | None = None,
 ) -> Tuple[HumanizeResponse, str]:
-    """Run Stage 1 humanization. Returns (HumanizeResponse, mode_description)."""
+    """Run Stage 1 humanization. Prefers local Ollama/Gemma or configured LLM; falls back cleanly."""
     profile_path = profiles_root / req.speaker_id / "style_profile.json"
     if not profile_path.exists():
         raise FileNotFoundError(f"Speaker style profile not found: {profile_path}")
 
     profile = load_style_profile(profile_path)
 
-    api_key = os.getenv("OPENAI_API_KEY")
-    base_url = os.getenv("OPENAI_BASE_URL")
-    model_name = llm_model or os.getenv("HUMANIZER_MODEL", "gpt-4o-mini")
+    api_key = os.getenv("OPENAI_API_KEY", "ollama")
+    base_url = os.getenv("OPENAI_BASE_URL", "http://localhost:11434/v1")
+    model_name = llm_model or os.getenv("HUMANIZER_MODEL", "gemma3:4b")
 
-    if api_key or base_url:
+    try:
         from openai import OpenAI
 
-        client = OpenAI(api_key=api_key or "ollama", base_url=base_url)
+        client = OpenAI(api_key=api_key, base_url=base_url, timeout=30.0)
         sys_prompt = build_llm_system_prompt(profile, req.filler_level, req.tone)
         resp = client.chat.completions.create(
             model=model_name,
@@ -157,12 +157,24 @@ def humanize_script(
                 {"role": "user", "content": req.clean_script},
             ],
         )
-        humanized = resp.choices[0].message.content.strip()
-        mode = f"LLM ({model_name}) + {profile.display_name} style_profile.json"
+        humanized = (resp.choices[0].message.content or "").strip()
+        if humanized:
+            mode = f"LLM ({model_name} @ {base_url}) + {profile.display_name} style_profile.json"
+            return (
+                HumanizeResponse(
+                    speaker_id=req.speaker_id,
+                    filler_level=req.filler_level,
+                    humanized_script=humanized,
+                ),
+                mode,
+            )
+    except Exception as exc:
+        fallback_reason = f"LLM unavailable ({type(exc).__name__}); using Offline Profile Mode"
     else:
-        humanized = humanize_offline(req.clean_script, profile, req.filler_level)
-        mode = f"Offline Profile Mode ({profile.display_name} filler distribution)"
+        fallback_reason = "Empty LLM response; using Offline Profile Mode"
 
+    humanized = humanize_offline(req.clean_script, profile, req.filler_level)
+    mode = f"{fallback_reason} ({profile.display_name} filler distribution)"
     return (
         HumanizeResponse(
             speaker_id=req.speaker_id,
