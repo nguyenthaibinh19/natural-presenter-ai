@@ -63,6 +63,23 @@ def detect_fillers(text: str) -> Tuple[List[str], int, FillerLevel]:
     return found, count, level
 
 
+def _register_cuda_dlls_windows() -> None:
+    """Ensure ctranslate2/faster-whisper can locate cublas64_12.dll bundled with PyTorch on Windows."""
+    if sys.platform != "win32":
+        return
+    import os
+
+    try:
+        import torch
+
+        torch_lib = Path(torch.__file__).resolve().parent / "lib"
+        if torch_lib.exists():
+            os.add_dll_directory(str(torch_lib))
+            os.environ["PATH"] = str(torch_lib) + os.pathsep + os.environ.get("PATH", "")
+    except Exception:
+        pass
+
+
 def transcribe_speaker(
     speaker_id: str,
     accent: str,
@@ -72,6 +89,8 @@ def transcribe_speaker(
     device: str,
     compute_type: str,
 ) -> None:
+    if device == "cuda":
+        _register_cuda_dlls_windows()
     from faster_whisper import WhisperModel
 
     speaker_dir = profiles_root / speaker_id

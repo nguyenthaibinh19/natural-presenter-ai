@@ -25,15 +25,16 @@
 
 ### Local Environment Status (Primary Dev Machine)
 - **GPU:** NVIDIA GeForce RTX 5060 Laptop GPU (`8151 MiB` VRAM, Driver `610.71`, Blackwell `sm_120`).
-- **Package Managers Available:** `conda 26.3.2`, `uv 0.11.25`, `winget`.
-- **Not Yet Configured:** Dedicated Conda environment (`presenter-ai`: Python 3.11 + FFmpeg + PyTorch CUDA 12.8 + `requirements.txt`).
-- **Local Speaker Folder Ready:** `profiles/vn_01/{raw_recordings,wavs,refs,lora}` created locally (gitignored).
+- **Conda Environment Configured:** `presenter-ai` (`C:\Users\mrbin\miniconda3\envs\presenter-ai`) with Python 3.11.18, FFmpeg 9.1.0, `torch==2.11.0+cu128`, `torchaudio==2.11.0+cu128`, `faster-whisper==1.2.1`, `silero-vad==6.3`, `gradio==6.32.0`, `pydantic==2.14.4`. Verified `torch.cuda.is_available() == True`.
+- **Initial Real Dataset Processed (from 2 presentation videos):**
+  - `vn_01`: 40 WAV clips (6.0 min), `metadata.jsonl` & `style_profile.json` generated (`109.1 WPM`, fillers: `uh: 90.7%`, `like: 9.3%`, 10 few-shot examples).
+  - `vn_02`: 30 WAV clips (4.5 min), `metadata.jsonl` & `style_profile.json` generated (`146.6 WPM`, fillers: `uh: 79.4%`, `eh: 11.8%`, `um: 8.8%`, 9 few-shot examples).
+- **Additional Script Added:** `scripts/00_extract_diarize_video.py` (offline FFmpeg + Silero VAD + SpeechBrain ECAPA-TDNN speaker separation for future multi-speaker videos).
 
 ---
 
 ## What Does NOT Exist Yet (Next Up)
-1. Local Conda environment installation (`presenter-ai`) and end-to-end smoke test on real audio.
-2. First speaker (`vn_01`) raw recordings (target: 20–30 min MVP test, then 60–90 min production).
-3. `src/humanizer.py` — Stage 1 Personalized Script Humanizer (LLM + `style_profile.json`).
-4. `scripts/05_train_lora_cloud.py` — Cloud RTX 4090 F5-TTS LoRA fine-tuning script/notebook.
-5. `src/synthesizer.py` & `app/web_ui.py` — Stage 2 F5-TTS inference + local Gradio Web UI.
+1. Human QA review of `vn_01`/`vn_02` `metadata.jsonl` + additional recording to reach 30–60 min for deep LoRA fine-tuning (current 6 min is great for MVP smoke tests and zero-shot F5-TTS testing).
+2. `src/humanizer.py` — Stage 1 Personalized Script Humanizer (LLM + `style_profile.json`).
+3. `scripts/05_train_lora_cloud.py` — Cloud RTX 4090 F5-TTS LoRA fine-tuning script/notebook.
+4. `src/synthesizer.py` & `app/web_ui.py` — Stage 2 F5-TTS inference + local Gradio Web UI.

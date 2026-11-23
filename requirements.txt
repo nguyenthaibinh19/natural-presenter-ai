@@ -4,11 +4,13 @@ python-dotenv>=1.0.1
 tqdm>=4.66.0
 numpy>=1.26.0
 
-# Audio processing & VAD slicing
+# Audio processing, VAD slicing & offline speaker diarization
 soundfile>=0.12.1
 librosa>=0.10.2
 pydub>=0.25.1
 silero-vad>=5.1.2
+scikit-learn>=1.5.0
+speechbrain>=1.0.2
 
 # Speech recognition & forced alignment (Stage 0: Dataset Prep)
 faster-whisper>=1.0.3

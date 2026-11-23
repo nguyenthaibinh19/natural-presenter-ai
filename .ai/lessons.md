@@ -10,3 +10,9 @@ Durable lessons captured during development so future contributors and AI agents
 
 3. **Windows Cross-Drive `Move-Item` on `.git` Folders (2026-11-23):**  
    Moving a Git repo across drives (`C:\` → `D:\`) in PowerShell may copy cleanly but fail to delete read-only objects inside the source `.git` directory; remove the old copy explicitly with `Remove-Item -Recurse -Force` after verifying the destination.
+
+4. **`faster-whisper` (`ctranslate2`) Missing `cublas64_12.dll` on Windows (2026-11-23):**  
+   PyTorch bundles `cublas64_12.dll` inside `torch/lib`, which is not on Windows' default DLL search path. `scripts/02_transcribe_align.py` registers `torch/lib` via `os.add_dll_directory()` before importing `faster_whisper`, resolving CUDA execution cleanly without manual PATH edits.
+
+5. **PowerShell `-c:a` Parsing with `conda run ffmpeg` (2026-11-23):**  
+   PowerShell splits unquoted `-c:a` into `-c:` and `a` when passed through `conda run`. Always invoke `ffmpeg.exe` directly or quote `"-c:a"` in PowerShell commands.
