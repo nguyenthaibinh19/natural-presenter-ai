@@ -1,7 +1,9 @@
 # AI Agent Technical Specification — Natural Presenter AI
 
 > **Instructions for AI Assistants (ChatGPT / Claude / Coding Agents):**  
-> This document is the authoritative technical specification for **Natural Presenter AI**. Treat it as your complete project context when helping the developers design, implement, debug, or extend any part of this system. Do not simplify away the core requirements around **non-native accent preservation** or **per-speaker individualized disfluency modeling**.
+> This document is the technical architecture & schema specification for **Natural Presenter AI**.  
+> **Living Project Memory:** Always check [`.ai/README.md`](../.ai/README.md), [`.ai/current_state.md`](../.ai/current_state.md), [`.ai/invariants.md`](../.ai/invariants.md), and [`.ai/decisions/`](../.ai/decisions/) for the latest project state and accepted ADRs.  
+> **Standing Rule:** Any completed task, architectural decision, schema change, or operational fix is NOT closed until `.ai/` (and this spec if contracts change) is updated in the same commit. Do not simplify away the core requirements around **non-native accent preservation** or **per-speaker individualized disfluency modeling**.
 
 ---
 
