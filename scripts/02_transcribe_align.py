@@ -20,7 +20,7 @@ ROOT_DIR = Path(__file__).resolve().parent.parent
 if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
-from src.schemas import DatasetClip, FillerLevel, PauseEvent, RecordingType, save_metadata
+from src.schemas import DatasetClip, FillerLevel, PauseEvent, RecordingType, load_metadata, save_metadata
 
 # Bias Whisper to retain verbatim disfluencies instead of smoothing them out.
 DISFLUENCY_PROMPT = (
@@ -88,6 +88,7 @@ def transcribe_speaker(
     model_size: str,
     device: str,
     compute_type: str,
+    append: bool = False,
 ) -> None:
     if device == "cuda":
         _register_cuda_dlls_windows()
@@ -99,10 +100,20 @@ def transcribe_speaker(
     if not wav_files:
         raise FileNotFoundError(f"No WAV clips found in {wavs_dir}. Run 01_preprocess_audio.py first.")
 
+    out_path = speaker_dir / "metadata.jsonl"
+    existing_clips: List[DatasetClip] = load_metadata(out_path) if append else []
+    existing_ids = {c.clip_id for c in existing_clips}
+    if append and existing_ids:
+        wav_files = [w for w in wav_files if w.stem not in existing_ids]
+        print(f"Append mode: preserving {len(existing_clips)} existing clips; transcribing {len(wav_files)} new clips.")
+        if not wav_files:
+            print("No new clips to transcribe.")
+            return
+
     print(f"Loading faster-whisper '{model_size}' on {device} ({compute_type})...")
     model = WhisperModel(model_size, device=device, compute_type=compute_type)
 
-    clips: List[DatasetClip] = []
+    new_clips: List[DatasetClip] = []
     for wav_path in tqdm(wav_files, desc=f"Transcribing {speaker_id}"):
         info = sf.info(str(wav_path))
         duration_sec = round(info.duration, 2)
@@ -152,7 +163,7 @@ def transcribe_speaker(
 
         fillers_used, filler_count, filler_level = detect_fillers(raw_text)
 
-        clips.append(
+        new_clips.append(
             DatasetClip(
                 clip_id=wav_path.stem,
                 audio_path=f"wavs/{wav_path.name}",
@@ -171,10 +182,10 @@ def transcribe_speaker(
             )
         )
 
-    out_path = speaker_dir / "metadata.jsonl"
-    save_metadata(clips, out_path)
-    print(f"Saved {len(clips)} transcripts to {out_path}")
-    print("Next step: Review clips with long pauses/fillers so raw_text matches audio 100%.")
+    all_clips = existing_clips + new_clips
+    save_metadata(all_clips, out_path)
+    print(f"Saved {len(all_clips)} total transcripts ({len(new_clips)} new) to {out_path}")
+    print("Next step: Review new clips in Dataset QA tab so raw_text matches audio 100%.")
 
 
 def main() -> None:
@@ -186,6 +197,11 @@ def main() -> None:
     parser.add_argument("--model", default="large-v3-turbo", help="Whisper model size")
     parser.add_argument("--device", default="cuda", choices=["cuda", "cpu"])
     parser.add_argument("--compute-type", default="float16", help="float16 for GPU, int8 for CPU")
+    parser.add_argument(
+        "--append",
+        action="store_true",
+        help="Preserve existing metadata.jsonl entries and only transcribe newly added wavs/",
+    )
     args = parser.parse_args()
 
     transcribe_speaker(
@@ -196,6 +212,7 @@ def main() -> None:
         model_size=args.model,
         device=args.device,
         compute_type=args.compute_type,
+        append=args.append,
     )
 
 

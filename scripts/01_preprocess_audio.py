@@ -102,21 +102,46 @@ def merge_and_split_segments(
     return final_clips
 
 
-def process_speaker(speaker_id: str, profiles_root: Path) -> None:
+def process_speaker(
+    speaker_id: str,
+    profiles_root: Path,
+    only_files: List[str] | None = None,
+    append: bool = False,
+) -> None:
     speaker_dir = profiles_root / speaker_id
     raw_dir = speaker_dir / "raw_recordings"
     wavs_dir = speaker_dir / "wavs"
     wavs_dir.mkdir(parents=True, exist_ok=True)
 
-    raw_files = sorted(
-        p for p in raw_dir.iterdir() if p.is_file() and p.suffix.lower() in SUPPORTED_EXTS
-    )
+    if only_files:
+        raw_files = [raw_dir / name for name in only_files]
+        missing = [str(p) for p in raw_files if not p.exists()]
+        if missing:
+            raise FileNotFoundError(f"Specified raw file(s) not found: {missing}")
+    else:
+        raw_files = sorted(
+            p for p in raw_dir.iterdir() if p.is_file() and p.suffix.lower() in SUPPORTED_EXTS
+        )
+
     if not raw_files:
         raise FileNotFoundError(
             f"No audio files found in {raw_dir}. Place your .wav/.mp3/.m4a recordings there first."
         )
 
-    clip_idx = 1
+    start_idx = 1
+    if append:
+        existing = sorted(wavs_dir.glob(f"{speaker_id}_*.wav"))
+        if existing:
+            nums = []
+            for p in existing:
+                try:
+                    nums.append(int(p.stem.rsplit("_", 1)[-1]))
+                except ValueError:
+                    pass
+            if nums:
+                start_idx = max(nums) + 1
+
+    clip_idx = start_idx
     total_dur = 0.0
 
     for raw_path in tqdm(raw_files, desc=f"Preprocessing {speaker_id}"):
@@ -134,8 +159,10 @@ def process_speaker(speaker_id: str, profiles_root: Path) -> None:
             total_dur += len(clip_audio) / TARGET_SR
             clip_idx += 1
 
+    created = clip_idx - start_idx
     print(
-        f"Done! Created {clip_idx - 1} clips ({total_dur / 60:.1f} minutes total) in {wavs_dir}"
+        f"Done! Created {created} new clips ({total_dur / 60:.1f} minutes total, "
+        f"IDs {start_idx:04d}..{clip_idx - 1:04d}) in {wavs_dir}"
     )
 
 
@@ -143,9 +170,24 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Preprocess and VAD-slice speaker recordings.")
     parser.add_argument("--speaker", required=True, help="Speaker ID, e.g., vn_01")
     parser.add_argument("--profiles-dir", default="profiles", help="Root profiles directory")
+    parser.add_argument(
+        "--files",
+        nargs="+",
+        help="Optional list of specific filenames inside raw_recordings/ to process",
+    )
+    parser.add_argument(
+        "--append",
+        action="store_true",
+        help="Append new clip IDs after existing wavs/ instead of overwriting from 0001",
+    )
     args = parser.parse_args()
 
-    process_speaker(args.speaker, Path(args.profiles_dir))
+    process_speaker(
+        args.speaker,
+        Path(args.profiles_dir),
+        only_files=args.files,
+        append=args.append,
+    )
 
 
 if __name__ == "__main__":

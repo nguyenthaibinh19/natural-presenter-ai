@@ -16,3 +16,6 @@ Durable lessons captured during development so future contributors and AI agents
 
 5. **PowerShell `-c:a` Parsing with `conda run ffmpeg` (2026-11-23):**  
    PowerShell splits unquoted `-c:a` into `-c:` and `a` when passed through `conda run`. Always invoke `ffmpeg.exe` directly or quote `"-c:a"` in PowerShell commands.
+
+6. **iPhone 16 Lossless `.m4a` (ALAC) Decoding on Windows (2026-11-23):**  
+   `libsndfile`/`librosa` cannot open Apple ALAC `.m4a` directly without an FFmpeg backend. Decode `.m4a` to 24kHz mono PCM `.wav` using `ffmpeg.exe` first, and move the `.m4a` originals to `raw_recordings/_originals/` to prevent duplicate slicing. Use `--append` on `01_preprocess_audio.py` and `02_transcribe_align.py` so previously QA-verified clips are never overwritten.
