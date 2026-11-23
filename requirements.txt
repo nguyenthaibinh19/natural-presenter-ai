@@ -1,0 +1,25 @@
+# Core data schemas & utilities
+pydantic>=2.7.0
+python-dotenv>=1.0.1
+tqdm>=4.66.0
+numpy>=1.26.0
+
+# Audio processing & VAD slicing
+soundfile>=0.12.1
+librosa>=0.10.2
+pydub>=0.25.1
+silero-vad>=5.1.2
+
+# Speech recognition & forced alignment (Stage 0: Dataset Prep)
+faster-whisper>=1.0.3
+whisperx>=3.1.5
+
+# Stage 1: Script Humanizer (LLM client - OpenAI-compatible: OpenAI, Gemini, Ollama, etc.)
+openai>=1.50.0
+
+# Web UI (Phase 1 Local App)
+gradio>=4.44.0
+
+# NOTE for NVIDIA RTX 5060 Laptop (Blackwell sm_120):
+# Install PyTorch separately with CUDA 12.8+ BEFORE installing requirements.txt:
+#   pip install torch torchaudio --index-url https://download.pytorch.org/whl/cu128

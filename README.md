@@ -10,6 +10,7 @@ This repository contains two complementary documents tailored to different audie
 
 1. **[Project Guide (For Humans)](docs/PROJECT_GUIDE.md)** — Start here. A clear, readable overview of the product vision, two-stage architecture, dataset strategy, hardware plan, and development roadmap.
 2. **[AI Agent Technical Specification (For ChatGPT / Coding Agents)](docs/AI_AGENT_SPEC.md)** — Designed to be uploaded or pasted directly into ChatGPT, Claude, or any coding agent so it immediately understands the full technical architecture, exact JSON schemas, dataset pipeline, model choices, and implementation milestones.
+3. **[Speaker Recording Guide & Sample Scripts](docs/RECORDING_GUIDE.md)** — Setup checklist, 60/40 spontaneous + scripted presentation prompts, and commands to run the automated dataset pipeline.
 
 ---
 
