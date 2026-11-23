@@ -13,7 +13,12 @@ Update `.ai/` **continuously for every durable change** — never leave project 
 | Schema or JSON contract (`src/schemas.py`) | [`current_state.md`](../current_state.md) + [`docs/AI_AGENT_SPEC.md`](../../docs/AI_AGENT_SPEC.md) |
 | Must-not-break rule added or revised | [`invariants.md`](../invariants.md) |
 | Non-obvious bug, model quirk, or hardware gotcha solved | [`lessons.md`](../lessons.md) |
+| TTS fine-tuning run or listening benchmark | [`experiments.md`](../experiments.md) + [`current_state.md`](../current_state.md) |
 | Recording or training workflow changed | [`docs/RECORDING_GUIDE.md`](../../docs/RECORDING_GUIDE.md) or relevant procedure |
+
+## Boundary Between `.ai/` and `docs/AI_AGENT_SPEC.md`
+- **`.ai/`** is the **daily living ledger** updated on every task, decision, or experiment.
+- **`docs/AI_AGENT_SPEC.md`** is the **single-file portable snapshot** designed to be uploaded directly into ChatGPT or external AI tools. Sync it whenever schemas, pipeline contracts, or major phase milestones change (no need to mirror minor daily status tweaks).
 
 ## ADR Immutability Rule
 

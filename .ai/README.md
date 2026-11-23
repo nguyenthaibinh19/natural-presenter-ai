@@ -46,6 +46,7 @@ See [`procedures/HOW_TO_UPDATE_PROJECT_MEMORY.md`](procedures/HOW_TO_UPDATE_PROJ
 | [architecture.md](architecture.md) | Subsystem boundaries, dataflow, and speaker profile layout |
 | [invariants.md](invariants.md) | Must-not-break rules for accents, disfluencies, data integrity, and Git safety |
 | [roadmap.md](roadmap.md) | Phased execution plan (MVP -> Multi-Accent -> Product Polish) |
+| [experiments.md](experiments.md) | Log of TTS LoRA fine-tuning runs and listening evaluations |
 | [lessons.md](lessons.md) | Durable engineering lessons learned |
 | [decisions/](decisions/) | Immutable Architecture Decision Records (`ADR-001` through `ADR-004`) |
 | [procedures/HOW_TO_UPDATE_PROJECT_MEMORY.md](procedures/HOW_TO_UPDATE_PROJECT_MEMORY.md) | Rules for keeping `.ai/` continuously updated |
