@@ -16,7 +16,7 @@
 - `docs/PROPOSALS_AND_SYNC.md` — shared Binh ↔ Ege proposal & approval board (`PROP-001`..`PROP-004` seeded).
 - `docs/PROJECT_GUIDE.md` — human-readable English guide for collaborators.
 - `docs/AI_AGENT_SPEC.md` — comprehensive machine-readable technical spec for ChatGPT / AI agents.
-- `docs/RECORDING_GUIDE.md` — speaker recording checklist, 60/40 spontaneous/scripted prompts, and CLI commands.
+- `docs/RECORDING_GUIDE.md` — speaker recording checklist (including iPhone 16 Lossless ALAC + soft room tips), 8 Part A spontaneous prompts, 18 Part B conversational scripts (~11–13 min across 3 sessions), and `--append` CLI workflow.
 
 ### Code Implemented
 - `src/schemas.py` — Pydantic v2 data contracts (`DatasetClip`, `PauseEvent`, `StyleProfile`, `FewShotExample`, `HumanizeRequest`, `HumanizeResponse`, `SynthesizeRequest`) + JSONL/JSON persistence helpers.
@@ -36,7 +36,7 @@
 - **GPU:** NVIDIA GeForce RTX 5060 Laptop GPU (`8151 MiB` VRAM, Driver `610.71`, Blackwell `sm_120`).
 - **Conda Environment Configured:** `presenter-ai` (`C:\Users\mrbin\miniconda3\envs\presenter-ai`) with Python 3.11.18, FFmpeg 9.1.0, `torch==2.11.0+cu128`, `torchaudio==2.11.0+cu128`, `f5-tts==1.1.22`, `faster-whisper==1.2.1`, `silero-vad==6.3`, `gradio==6.32.0`, `pydantic==2.14.4`. Verified `torch.cuda.is_available() == True`.
 - **Initial Real Dataset Processed:**
-  - `vn_01` (**Binh**): **90 WAV clips (~13.9 min total)** — 40 clips from OBS presentation videos (39 verified, 5.85 min) + 50 new clips (`0041..0090`, 7.9 min) from iPhone 16 Lossless ALAC Part A recordings (pending QA review). Curated ref clip `refs/presentation_ref.wav` (10.3s), `style_profile.json` (`113.0 WPM`, `7.2 words/pause`, fillers: `uh: 80.0%`, `like: 13.6%`, `um: 3.6%`, `actually: 2.7%`, 12 few-shot examples).
+  - `vn_01` (**Binh**): **90 WAV clips (13.88 min total) — 89/90 Verified (13.72 min clean spontaneous Part A; only `vn_01_0090` excluded)**. Curated ref clip `refs/presentation_ref.wav` (10.3s), `style_profile.json` rebuilt (`113.3 WPM`, `7.2 words/pause`, fillers: `uh: 80.0%`, `like: 13.6%`, `um: 3.6%`, `actually: 2.7%`, 12 verified few-shot examples). Next: record ~10–12 min of Part B conversational scripts (+ optional ~4–5 min Part A) to reach ~25–30 min total.
   - `vn_02` (**Ege**): 30 WAV clips (4.5 min), curated ref clip `refs/presentation_ref.wav` (10.15s), `metadata.jsonl` & `style_profile.json` (`146.6 WPM`, fillers: `uh: 79.4%`, `eh: 11.8%`, `um: 8.8%`, 9 few-shot examples).
 
 ---
