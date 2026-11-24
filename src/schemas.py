@@ -119,6 +119,7 @@ class SynthesizeRequest(BaseModel):
     humanized_script: str = Field(..., min_length=1)
     tone: ToneType = Field(default="presentation")
     speed: float = Field(default=1.0, ge=0.75, le=1.25)
+    nfe_step: int = Field(default=16, ge=8, le=64)
 
 
 def load_metadata(path: Path) -> List[DatasetClip]:

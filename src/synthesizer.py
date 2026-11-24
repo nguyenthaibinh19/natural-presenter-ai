@@ -125,22 +125,27 @@ class PresentationSynthesizer:
             else f"Zero-Shot F5-TTS (ref: {ref_wav.name})"
         )
 
-        chunks = split_into_chunks(req.humanized_script)
-        audio_chunks: List[np.ndarray] = []
-        sr = TARGET_SR
+        t0 = time.perf_counter()
+        wav, sr, _ = tts.infer(
+            ref_file=str(ref_wav),
+            ref_text=ref_text,
+            gen_text=req.humanized_script.strip(),
+            speed=req.speed,
+            nfe_step=req.nfe_step,
+            cross_fade_duration=0.15,
+            remove_silence=False,
+        )
+        elapsed = time.perf_counter() - t0
 
-        for chunk in chunks:
-            wav, sr, _ = tts.infer(
-                ref_file=str(ref_wav),
-                ref_text=ref_text,
-                gen_text=chunk,
-                speed=req.speed,
-                remove_silence=False,
-            )
-            audio_chunks.append(wav)
+        final_audio = np.asarray(wav, dtype=np.float32).flatten()
+        peak = np.max(np.abs(final_audio))
+        if peak > 1e-6:
+            final_audio = final_audio / peak * 0.92
 
-        final_audio = stitch_audio(audio_chunks, sr=sr)
         out_name = f"{req.speaker_id}_{int(time.time())}.wav"
         out_path = self.outputs_dir / out_name
         sf.write(str(out_path), final_audio, sr, subtype="PCM_16")
-        return out_path, f"{mode_info} | {len(chunks)} chunk(s) | {len(final_audio) / sr:.1f}s"
+        return (
+            out_path,
+            f"{mode_info} | {req.nfe_step} steps | audio: {len(final_audio) / sr:.1f}s | generated in {elapsed:.1f}s",
+        )

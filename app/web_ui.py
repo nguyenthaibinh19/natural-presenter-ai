@@ -90,15 +90,17 @@ def on_humanize(
 
 
 def on_synthesize(
-    display_name: str, humanized_script: str, tone: str, speed: float
+    display_name: str, humanized_script: str, tone: str, speed: float, quality_mode: str
 ) -> Tuple[str, str]:
     speakers = discover_speakers()
     spk_id = speakers[display_name]
+    nfe_step = 16 if "Fast" in quality_mode else 32
     req = SynthesizeRequest(
         speaker_id=spk_id,
         humanized_script=humanized_script,
         tone=tone.lower(),
         speed=speed,
+        nfe_step=nfe_step,
     )
     out_path, info = synthesizer.synthesize(req)
     return str(out_path), f"Stage 2 complete — {info}"
@@ -336,6 +338,11 @@ def build_ui() -> gr.Blocks:
                         step=0.05,
                         label="Speaking Speed",
                     )
+                    quality_radio = gr.Radio(
+                        choices=["Fast Preview (16 steps — 2x faster)", "High Quality (32 steps)"],
+                        value="Fast Preview (16 steps — 2x faster)",
+                        label="TTS Quality / Speed",
+                    )
                     synth_btn = gr.Button(
                         "Step 2: Generate Presentation Audio (F5-TTS)", variant="primary"
                     )
@@ -350,7 +357,7 @@ def build_ui() -> gr.Blocks:
                 )
                 synth_btn.click(
                     fn=on_synthesize,
-                    inputs=[speaker_dd, humanized_box, tone_dd, speed_slider],
+                    inputs=[speaker_dd, humanized_box, tone_dd, speed_slider, quality_radio],
                     outputs=[audio_out, stage2_status],
                 )
 

@@ -19,3 +19,6 @@ Durable lessons captured during development so future contributors and AI agents
 
 6. **iPhone 16 Lossless `.m4a` (ALAC) Decoding on Windows (2026-11-23):**  
    `libsndfile`/`librosa` cannot open Apple ALAC `.m4a` directly without an FFmpeg backend. Decode `.m4a` to 24kHz mono PCM `.wav` using `ffmpeg.exe` first, and move the `.m4a` originals to `raw_recordings/_originals/` to prevent duplicate slicing. Use `--append` on `01_preprocess_audio.py` and `02_transcribe_align.py` so previously QA-verified clips are never overwritten.
+
+7. **RTX 5060 Laptop Battery Power Cap & F5-TTS Inference Speed (2026-11-24):**  
+   On battery / power-saver mode, the RTX 5060 Laptop throttles to `P4` (`15W / 31W`), slowing F5-TTS by 4–6x (~40s warmup + ~11.5s/batch at 32 steps). Plugging in AC power (Performance mode) + removing redundant double-chunking in `src/synthesizer.py` + defaulting to `nfe_step=16` (`Fast Preview`) cuts generation time dramatically.
