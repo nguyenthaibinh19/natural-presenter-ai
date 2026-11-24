@@ -42,12 +42,12 @@
     - Part A (spontaneous): 89 clips (13.72 min)
     - Part B (scripted): 84 clips (12.93 min, iPhone 16 Lossless ALAC 34.7–38.0 dB SNR)
     - `style_profile.json` rebuilt (`102.7 WPM`, `9.0 words/pause`, fillers: `uh: 77.6%`, `like: 12.9%`, `um: 4.3%`, `actually: 4.3%`, `basically: 0.9%`, 12 verified few-shot examples).
-    - **F5-TTS export & Colab zip ready:** `profiles/vn_01/vn_01_f5_dataset.zip` (61.1 MB, 173 verified clips + ref clip) ready to upload to Google Drive for **Google Colab Pro NVIDIA L4 (23GB VRAM)** fine-tuning (`FT-001`)!
-  - `vn_02` (**Ege**): 30 WAV clips (4.5 min), curated ref clip `refs/presentation_ref.wav` (10.15s), `metadata.jsonl` & `style_profile.json` (`146.6 WPM`, fillers: `uh: 79.4%`, `eh: 11.8%`, `um: 8.8%`, 9 few-shot examples).
+    - **First Fine-Tuned Model Live Locally (`FT-001`):** `profiles/vn_01/lora/vn_01_model_4000_fp16.safetensors` (**643 MB**, pruned EMA FP16 from 4,020 updates / 60 epochs on Colab Tesla T4, final loss `0.408`). Verified on local RTX 5060: 6.5s audio synthesized in 5.3s (16 steps).
+  - `vn_02` (**Ege**): 30 WAV clips (4.5 min), curated ref clip `refs/presentation_ref.wav` (10.15s), `metadata.jsonl` & `style_profile.json` (`146.6 WPM`, fillers: `uh: 79.4%`, `eh: 11.8%`, `um: 8.8%`, 9 few-shot examples). Zero-Shot active; awaiting Ege's QA & additional recordings (`PROP-001`).
 
 ---
 
 ## What Does NOT Exist Yet (Next Up)
-1. Listen-test Zero-Shot F5-TTS output for Binh (`vn_01`) and Ege (`vn_02`) via local Web UI (`http://127.0.0.1:7860`).
-2. Human QA review of `vn_01`/`vn_02` `metadata.jsonl` + additional recording to reach 30–60 min if Zero-Shot accent/filler fidelity needs LoRA fine-tuning.
-3. `scripts/05_train_lora_cloud.py` — Cloud RTX 4090 F5-TTS LoRA fine-tuning script/notebook.
+1. User listening evaluation & rating of `FT-001` (`vn_01_model_4000_fp16.safetensors`) via local Web UI (`http://127.0.0.1:7860`).
+2. Install local **Ollama + `gemma3:4b`** on dev machine to upgrade Stage 1 from Offline Profile Mode to full LLM humanization (`ADR-005`, `PROP-002`).
+3. Onboard Ege's expanded & QA-verified dataset (`vn_02` / `ege_01`) and fine-tune Ege's checkpoint (`FT-002`, `PROP-001`).

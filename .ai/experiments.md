@@ -7,6 +7,7 @@ Track every TTS fine-tuning run and Stage 1 humanizer evaluation here so we neve
 | Run ID | Date | Speaker | Dataset (min / clips) | Base Model | Key Hyperparams (LR / Steps / Batch) | Cloud GPU & Cost | Accent Fidelity (1–5) | Filler & Breath Realism (1–5) | Verdict & Notes |
 |---|---|---|---|---|---|---|---|---|---|
 | `ZS-001` | 2026-11-23 | `vn_01` (Binh) & `vn_02` (Ege) | 10s ref clip each (Zero-Shot) | `F5TTS_v1_Base` | Zero-Shot (no training) | Local RTX 5060 (\$0) | 4 / 5 | 4 / 5 | **User rated 7–8/10 overall!** Strong baseline; next step is 30–60 min dataset + Cloud fine-tune to push to 9–9.5/10. |
+| `FT-001` | 2026-11-24 | `vn_01` (Binh) | 26.65 min / 173 verified clips (51.5% Part A, 48.5% Part B) | `F5TTS_v1_Base` | `lr=1e-5`, `batch=1800` frames x `grad_acc=2`, `epochs=60` (4020 updates), `fp16`, `bnb_optimizer`, `warmup=100`, final loss `0.408` | Colab Pro Tesla T4 15GB (\$0 extra) | *(pending rating)* | *(pending rating)* | **Success!** Pruned `model_4000.pt` (3.38 GB) → `vn_01_model_4000_fp16.safetensors` (**643 MB**). Verified locally on RTX 5060: 6.5s audio generated in **5.3s** (16 steps, faster than real time). |
 
 ## Evaluation Criteria
 - **Accent Fidelity (1–5):** `5` = indistinguishable from speaker's authentic non-native English accent; `1` = noticeably normalized toward generic US/UK accent.
