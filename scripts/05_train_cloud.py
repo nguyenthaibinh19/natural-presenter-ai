@@ -97,13 +97,13 @@ def run_f5_finetune(
     batch_frames: int,
     save_per_updates: int,
 ) -> None:
-    """Invoke F5-TTS official fine-tune CLI with accent-preserving character tokenizer."""
+    """Invoke F5-TTS official fine-tune CLI with pretrained 2545-token vocab (raw chars for English)."""
     cmd = [
         "f5-tts_finetune-cli",
         "--exp_name",
         "F5TTS_v1_Base",
         "--dataset_name",
-        f"{speaker_id}_f5",
+        speaker_id,
         "--learning_rate",
         str(lr),
         "--batch_size_per_gpu",
@@ -112,13 +112,18 @@ def run_f5_finetune(
         "frame",
         "--epochs",
         str(epochs),
+        "--num_warmup_updates",
+        "100",
         "--save_per_updates",
         str(save_per_updates),
+        "--last_per_updates",
+        "250",
         "--keep_last_n_checkpoints",
-        "3",
+        "4",
         "--finetune",
         "--tokenizer",
-        "char",
+        "pinyin",
+        "--bnb_optimizer",
     ]
     print("\nLaunching F5-TTS fine-tuning:")
     print("  " + " ".join(cmd))

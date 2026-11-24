@@ -22,3 +22,6 @@ Durable lessons captured during development so future contributors and AI agents
 
 7. **RTX 5060 Laptop Battery Power Cap & F5-TTS Inference Speed (2026-11-24):**  
    On battery / power-saver mode, the RTX 5060 Laptop throttles to `P4` (`15W / 31W`), slowing F5-TTS by 4–6x (~40s warmup + ~11.5s/batch at 32 steps). Plugging in AC power (Performance mode) + removing redundant double-chunking in `src/synthesizer.py` + defaulting to `nfe_step=16` (`Fast Preview`) cuts generation time dramatically.
+
+8. **F5-TTS Fine-Tuning Tokenizer & Warmup Pitfalls (2026-11-24):**  
+   `F5TTS_v1_Base` (`model_1250000.safetensors`) uses a 2545-token pretrained `vocab.txt` under `--tokenizer pinyin` (which keeps English text as raw characters with zero G2P normalization). Fine-tuning MUST reuse that exact pretrained `vocab.txt` + `--tokenizer pinyin` so text embeddings load cleanly, and MUST override `--num_warmup_updates` from the default `20000` down to `100` for ~30-minute datasets (~1,500–2,000 total updates).
