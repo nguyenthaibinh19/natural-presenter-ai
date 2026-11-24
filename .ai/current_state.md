@@ -24,7 +24,8 @@
 - `src/synthesizer.py` — Stage 2 F5-TTS synthesizer supporting Zero-Shot reference clips (`refs/presentation_ref.wav`) and automatic per-speaker checkpoint/LoRA loading (`lora/`) with chunking & smooth audio stitching.
 - `app/web_ui.py` — Local Gradio Web UI (`http://127.0.0.1:7860`) with two tabs: **Presentation Studio** (Stage 1 + Stage 2) and **Dataset QA Reviewer** (live verified progress counter, default `Only Unverified (TODO)` filter with `✅ OK` / `⬜ TODO` badges, one-click `✅ Verify & Next Clip`, and `Rebuild style_profile.json`).
 - `scripts/05_train_cloud.py` — Prepares F5-TTS fine-tuning dataset (`metadata.csv`, `duration.json`) and invokes `f5-tts_finetune-cli` with pretrained 2545-token vocab (`--tokenizer pinyin`, raw chars for English), `--num_warmup_updates 100`, and `--bnb_optimizer`.
-- `notebooks/05_finetune_f5tts_colab.ipynb` — Ready-to-run Google Colab Pro notebook (NVIDIA L4 23GB / A100) with Google Drive auto-checkpointing every 500 steps and built-in Zero-Shot vs. Fine-Tuned listening comparison cell.
+- `notebooks/05_finetune_f5tts_colab.ipynb` — Ready-to-run Google Colab Pro notebook (NVIDIA L4 23GB / A100) with Google Drive auto-checkpointing.
+- `notebooks/05_finetune_f5tts_jupyter_l40.ipynb` — Ready-to-run university JupyterLab notebook tuned for **NVIDIA L40 (44.4 GB VRAM, PyTorch 2.6+cu124)** (`batch_size=6400` frames, `bf16`, full AdamW, ~15–25 min total training, inline Zero-Shot vs. Fine-Tuned playback).
 - `.env.example` — Default Ollama/Gemma Stage 1 configuration template.
 - `scripts/00_extract_diarize_video.py` — Offline FFmpeg + Silero VAD + SpeechBrain ECAPA-TDNN speaker separation for multi-speaker videos.
 - `scripts/01_preprocess_audio.py` — 24kHz mono WAV conversion, peak normalization (no aggressive noise gate), Silero VAD slicing (3–12s with 150ms padding).
