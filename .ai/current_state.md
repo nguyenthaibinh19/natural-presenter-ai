@@ -36,7 +36,7 @@
 - **GPU:** NVIDIA GeForce RTX 5060 Laptop GPU (`8151 MiB` VRAM, Driver `610.71`, Blackwell `sm_120`).
 - **Conda Environment Configured:** `presenter-ai` (`C:\Users\mrbin\miniconda3\envs\presenter-ai`) with Python 3.11.18, FFmpeg 9.1.0, `torch==2.11.0+cu128`, `torchaudio==2.11.0+cu128`, `f5-tts==1.1.22`, `faster-whisper==1.2.1`, `silero-vad==6.3`, `gradio==6.32.0`, `pydantic==2.14.4`. Verified `torch.cuda.is_available() == True`.
 - **Initial Real Dataset Processed:**
-  - `vn_01` (**Binh**): **90 WAV clips (13.88 min total) — 89/90 Verified (13.72 min clean spontaneous Part A; only `vn_01_0090` excluded)**. Curated ref clip `refs/presentation_ref.wav` (10.3s), `style_profile.json` rebuilt (`113.3 WPM`, `7.2 words/pause`, fillers: `uh: 80.0%`, `like: 13.6%`, `um: 3.6%`, `actually: 2.7%`, 12 verified few-shot examples). Next: record ~10–12 min of Part B conversational scripts (+ optional ~4–5 min Part A) to reach ~25–30 min total.
+  - `vn_01` (**Binh**): **174 WAV clips (~26.8 min total)** — 90 Part A spontaneous clips (89/90 Verified, 13.72 min) + 84 new Part B scripted clips (`0091..0174`, 12.9 min from 4 iPhone 16 Lossless ALAC files at 34.7–38.0 dB SNR, pending QA review). Curated ref clip `refs/presentation_ref.wav` (10.3s), `style_profile.json` (`102.7 WPM`, `9.0 words/pause`, fillers: `uh: 77.6%`, `like: 12.9%`, `um: 4.3%`, `actually: 4.3%`, `basically: 0.9%`). Once the 84 Part B clips are QA-verified, `vn_01` (~26–27 min clean balanced dataset) is ready for our first Cloud RTX 4090 fine-tune (`PROP-003`)!
   - `vn_02` (**Ege**): 30 WAV clips (4.5 min), curated ref clip `refs/presentation_ref.wav` (10.15s), `metadata.jsonl` & `style_profile.json` (`146.6 WPM`, fillers: `uh: 79.4%`, `eh: 11.8%`, `um: 8.8%`, 9 few-shot examples).
 
 ---
