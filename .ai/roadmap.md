@@ -7,7 +7,7 @@
 - [x] Local Conda environment (`presenter-ai`) set up with PyTorch CUDA 12.8 for RTX 5060 Laptop (verified GPU pipeline end-to-end)
 - [x] Initial real presentation video data extracted & processed for `vn_01` (6.0 min, 40 clips) and `vn_02` (4.5 min, 30 clips) with individualized `style_profile.json`
 - [x] Stage 1 (`src/humanizer.py`, Ollama/Gemma ready), Stage 2 (`src/synthesizer.py` Zero-Shot rated 7–8/10), local Gradio UI (`app/web_ui.py` with Presentation Studio + Dataset QA Reviewer), and cloud training script (`scripts/05_train_cloud.py`) implemented
-- [ ] Install local Ollama + `gemma3:4b` on dev machine for Stage 1 LLM humanization
+- [x] Install local Ollama (`0.40.18`) + `gemma3:4b` on dev machine for Stage 1 LLM humanization + add `scripts/06_export_humanizer_sft.py` for future Stage 1 QLoRA fine-tuning (**Phase 1 MVP 100% Complete!**)
 - [x] QA-verify `metadata.jsonl` + expand `vn_01` to **173 verified clips (26.65 min balanced Part A + Part B)** & package `vn_01_f5_dataset.zip` (61 MB) + JupyterLab L40 (44GB) & Colab L4 notebooks
 - [x] Run first fine-tuning (`FT-001`) for `vn_01` (Colab Tesla T4, 60 epochs / 4,020 updates, loss `0.408`), pruned to 643 MB `vn_01_model_4000_fp16.safetensors`, and verified live on local RTX 5060 (faster than real time)
 

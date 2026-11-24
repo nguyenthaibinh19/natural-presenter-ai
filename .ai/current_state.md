@@ -24,7 +24,8 @@
 - `src/synthesizer.py` — Stage 2 F5-TTS synthesizer supporting Zero-Shot reference clips (`refs/presentation_ref.wav`) and automatic per-speaker checkpoint/LoRA loading (`lora/`) with chunking & smooth audio stitching.
 - `app/web_ui.py` — Local Gradio Web UI (`http://127.0.0.1:7860`) with two tabs: **Presentation Studio** (Stage 1 + Stage 2) and **Dataset QA Reviewer** (live verified progress counter, default `Only Unverified (TODO)` filter with `✅ OK` / `⬜ TODO` badges, one-click `✅ Verify & Next Clip`, and `Rebuild style_profile.json`).
 - `scripts/05_train_cloud.py` — Prepares F5-TTS fine-tuning dataset (`metadata.csv`, `duration.json`) and invokes `f5-tts_finetune-cli` with pretrained 2545-token vocab (`--tokenizer pinyin`, raw chars for English), `--num_warmup_updates 100`, and `--bnb_optimizer`.
-- `notebooks/05_finetune_f5tts_colab.ipynb` — Ready-to-run Google Colab Pro notebook (NVIDIA L4 23GB / A100) with Google Drive auto-checkpointing.
+- `scripts/06_export_humanizer_sft.py` — Exports verified `(clean_text -> raw_text)` pairs across speakers into ChatML JSONL (`profiles/humanizer_sft.jsonl`) for optional future QLoRA fine-tuning of Gemma/Qwen Stage 1 models.
+- `notebooks/05_finetune_f5tts_colab.ipynb` — Ready-to-run Google Colab Pro notebook (NVIDIA L4 / Tesla T4) with Google Drive auto-checkpointing and Cell 6 slim FP16 `.safetensors` exporter (~643 MB).
 - `notebooks/05_finetune_f5tts_jupyter_l40.ipynb` — Ready-to-run university JupyterLab notebook tuned for **NVIDIA L40 (44.4 GB VRAM, PyTorch 2.6+cu124)** (`batch_size=6400` frames, `bf16`, full AdamW, ~15–25 min total training, inline Zero-Shot vs. Fine-Tuned playback).
 - `.env.example` — Default Ollama/Gemma Stage 1 configuration template.
 - `scripts/00_extract_diarize_video.py` — Offline FFmpeg + Silero VAD + SpeechBrain ECAPA-TDNN speaker separation for multi-speaker videos.
@@ -37,6 +38,7 @@
 ### Local Environment Status (Primary Dev Machine)
 - **GPU:** NVIDIA GeForce RTX 5060 Laptop GPU (`8151 MiB` VRAM, Driver `610.71`, Blackwell `sm_120`).
 - **Conda Environment Configured:** `presenter-ai` (`C:\Users\mrbin\miniconda3\envs\presenter-ai`) with Python 3.11.18, FFmpeg 9.1.0, `torch==2.11.0+cu128`, `torchaudio==2.11.0+cu128`, `f5-tts==1.1.22`, `faster-whisper==1.2.1`, `silero-vad==6.3`, `gradio==6.32.0`, `pydantic==2.14.4`. Verified `torch.cuda.is_available() == True`.
+- **Local LLM Configured (Stage 1):** **Ollama `0.40.18`** installed locally with **`gemma3:4b`** pulled and verified live at `http://localhost:11434/v1` (`.env` configured). Automatically expands symbols (`Q3` → `Q three`, `24%` → `24 percent`, `3x3` → `three by three`) and injects speaker-specific fillers from `style_profile.json`. `173` verified `vn_01` pairs exported to `profiles/humanizer_sft.jsonl` for future optional Gemma QLoRA fine-tuning.
 - **Initial Real Dataset Processed:**
   - `vn_01` (**Binh**): **173 / 174 Verified clips (26.65 min clean, 0 integrity errors — only `vn_01_0090` excluded)**:
     - Part A (spontaneous): 89 clips (13.72 min)
@@ -47,7 +49,7 @@
 
 ---
 
-## What Does NOT Exist Yet (Next Up)
-1. User listening evaluation & rating of `FT-001` (`vn_01_model_4000_fp16.safetensors`) via local Web UI (`http://127.0.0.1:7860`).
-2. Install local **Ollama + `gemma3:4b`** on dev machine to upgrade Stage 1 from Offline Profile Mode to full LLM humanization (`ADR-005`, `PROP-002`).
-3. Onboard Ege's expanded & QA-verified dataset (`vn_02` / `ege_01`) and fine-tune Ege's checkpoint (`FT-002`, `PROP-001`).
+## What Does NOT Exist Yet (Next Up — Phase 2)
+1. Onboard Ege's expanded & QA-verified dataset (`vn_02` / `ege_01`, `PROP-001`) and fine-tune Ege's checkpoint (`FT-002`).
+2. Benchmark/tune Stage 1 prompt or QLoRA fine-tune Gemma on multi-speaker `humanizer_sft.jsonl` once Ege + more speakers are verified (`PROP-002`).
+3. Slide-by-slide multi-speaker presentation mode in Web UI (`PROP-004`).
