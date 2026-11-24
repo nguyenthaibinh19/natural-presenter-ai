@@ -8,8 +8,8 @@
 - [x] Initial real presentation video data extracted & processed for `vn_01` (6.0 min, 40 clips) and `vn_02` (4.5 min, 30 clips) with individualized `style_profile.json`
 - [x] Stage 1 (`src/humanizer.py`, Ollama/Gemma ready), Stage 2 (`src/synthesizer.py` Zero-Shot rated 7–8/10), local Gradio UI (`app/web_ui.py` with Presentation Studio + Dataset QA Reviewer), and cloud training script (`scripts/05_train_cloud.py`) implemented
 - [ ] Install local Ollama + `gemma3:4b` on dev machine for Stage 1 LLM humanization
-- [ ] QA-verify `metadata.jsonl` via Dataset QA tab + record additional speech to reach 30–60 min for deep `vn_01`/`vn_02` fine-tuning
-- [ ] Run first Cloud RTX 4090 fine-tuning (`scripts/05_train_cloud.py`) and benchmark vs. Zero-Shot baseline (`ZS-001`)
+- [x] QA-verify `metadata.jsonl` + expand `vn_01` to **173 verified clips (26.65 min balanced Part A + Part B)** & export `f5_dataset/` ready for cloud fine-tuning
+- [ ] Run first Cloud RTX 4090 fine-tuning (`scripts/05_train_cloud.py`) for `vn_01` and benchmark vs. Zero-Shot baseline (`ZS-001`)
 
 ## Phase 2 — Multi-Accent Expansion
 - [ ] Onboard `speaker_02` (collaborator) and validate zero accent/filler bleed between speakers

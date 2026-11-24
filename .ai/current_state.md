@@ -36,7 +36,11 @@
 - **GPU:** NVIDIA GeForce RTX 5060 Laptop GPU (`8151 MiB` VRAM, Driver `610.71`, Blackwell `sm_120`).
 - **Conda Environment Configured:** `presenter-ai` (`C:\Users\mrbin\miniconda3\envs\presenter-ai`) with Python 3.11.18, FFmpeg 9.1.0, `torch==2.11.0+cu128`, `torchaudio==2.11.0+cu128`, `f5-tts==1.1.22`, `faster-whisper==1.2.1`, `silero-vad==6.3`, `gradio==6.32.0`, `pydantic==2.14.4`. Verified `torch.cuda.is_available() == True`.
 - **Initial Real Dataset Processed:**
-  - `vn_01` (**Binh**): **174 WAV clips (~26.8 min total)** — 90 Part A spontaneous clips (89/90 Verified, 13.72 min) + 84 new Part B scripted clips (`0091..0174`, 12.9 min from 4 iPhone 16 Lossless ALAC files at 34.7–38.0 dB SNR, pending QA review). Curated ref clip `refs/presentation_ref.wav` (10.3s), `style_profile.json` (`102.7 WPM`, `9.0 words/pause`, fillers: `uh: 77.6%`, `like: 12.9%`, `um: 4.3%`, `actually: 4.3%`, `basically: 0.9%`). Once the 84 Part B clips are QA-verified, `vn_01` (~26–27 min clean balanced dataset) is ready for our first Cloud RTX 4090 fine-tune (`PROP-003`)!
+  - `vn_01` (**Binh**): **173 / 174 Verified clips (26.65 min clean, 0 integrity errors — only `vn_01_0090` excluded)**:
+    - Part A (spontaneous): 89 clips (13.72 min)
+    - Part B (scripted): 84 clips (12.93 min, iPhone 16 Lossless ALAC 34.7–38.0 dB SNR)
+    - `style_profile.json` rebuilt (`102.7 WPM`, `9.0 words/pause`, fillers: `uh: 77.6%`, `like: 12.9%`, `um: 4.3%`, `actually: 4.3%`, `basically: 0.9%`, 12 verified few-shot examples).
+    - **F5-TTS export ready:** `profiles/vn_01/f5_dataset/` prepared (173 clips, 26.65 min) — **ready for first Cloud RTX 4090 fine-tune (`PROP-003`)!**
   - `vn_02` (**Ege**): 30 WAV clips (4.5 min), curated ref clip `refs/presentation_ref.wav` (10.15s), `metadata.jsonl` & `style_profile.json` (`146.6 WPM`, fillers: `uh: 79.4%`, `eh: 11.8%`, `um: 8.8%`, 9 few-shot examples).
 
 ---
