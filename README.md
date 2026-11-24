@@ -8,10 +8,12 @@
 
 This repository contains two complementary documents tailored to different audiences:
 
-1. **[Project Memory Index (`.ai/README.md`)](.ai/README.md)** — **Durable living memory** (current state, invariants, ADRs, roadmap, lessons). Updated continuously on every decision or milestone.
-2. **[Project Guide (For Humans)](docs/PROJECT_GUIDE.md)** — Start here. A clear, readable overview of the product vision, two-stage architecture, dataset strategy, hardware plan, and development roadmap.
-3. **[AI Agent Technical Specification (For ChatGPT / Coding Agents)](docs/AI_AGENT_SPEC.md)** — Designed to be uploaded or pasted directly into ChatGPT, Claude, or any coding agent so it immediately understands the full technical architecture, exact JSON schemas, dataset pipeline, model choices, and implementation milestones.
-4. **[Speaker Recording Guide & Sample Scripts](docs/RECORDING_GUIDE.md)** — Setup checklist, 60/40 spontaneous + scripted presentation prompts, and commands to run the automated dataset pipeline.
+1. **[Project Memory Index (`.ai/README.md`)](.ai/README.md)** — **Durable living memory** (current state, invariants, ADRs, roadmap, experiments, lessons). Updated continuously on every decision or milestone.
+2. **[Ege Onboarding & AI Assistant Brief](docs/EGE_ONBOARDING_AND_AI_BRIEF.md)** — **Start here if you are Ege (or Ege's AI assistant)** — quick copy-paste AI prompt, current snapshot, and concrete tasks ready to pick up.
+3. **[Proposals & Alignment Board (Binh ↔ Ege)](docs/PROPOSALS_AND_SYNC.md)** — Shared space where Ege or Binh propose ideas, discuss trade-offs, and approve what to build together.
+4. **[Project Guide (For Humans)](docs/PROJECT_GUIDE.md)** — A clear, readable overview of the product vision, two-stage architecture, dataset strategy, hardware plan, and development roadmap.
+5. **[AI Agent Technical Specification (For ChatGPT / Coding Agents)](docs/AI_AGENT_SPEC.md)** — Single-file technical spec with exact JSON schemas, dataset pipeline, model choices, and implementation milestones.
+6. **[Speaker Recording Guide & Sample Scripts](docs/RECORDING_GUIDE.md)** — Setup checklist, 60/40 spontaneous + scripted presentation prompts, and commands to run the automated dataset pipeline.
 
 ---
 

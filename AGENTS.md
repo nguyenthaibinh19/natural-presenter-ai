@@ -7,6 +7,8 @@ Read this first before making any code, prompt, or documentation changes in this
 2. `.ai/current_state.md` — Current repo status, hardware, and active phase
 3. `.ai/invariants.md` — Non-negotiable product & engineering rules
 4. `.ai/architecture.md` & `.ai/decisions/` — Subsystem boundaries and accepted ADRs
+5. `docs/PROPOSALS_AND_SYNC.md` — Shared Binh ↔ Ege proposals & approval board (check before starting new features; propose new ideas here first)
+6. `docs/EGE_ONBOARDING_AND_AI_BRIEF.md` — If assisting Ege, read this for Ege's active tracks and collaboration workflow
 
 ## Standing Rules
 - **Never violate `.ai/invariants.md`** (preserve authentic non-native accents, keep per-speaker individualized disfluency profiles, maintain 1:1 `raw_text` ↔ audio alignment, preserve natural breaths, never commit audio/model weights to Git).

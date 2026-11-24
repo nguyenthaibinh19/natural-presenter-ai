@@ -1,6 +1,6 @@
 # Current State
 
-**Last Updated:** 2026-11-23  
+**Last Updated:** 2026-11-24  
 **Active Phase:** Phase 1 — MVP Setup & First Speaker (`vn_01`) Dataset Preparation  
 **Repository:** `https://github.com/nguyenthaibinh19/natural-presenter-ai` (Private)  
 **Primary Local Path:** `D:\natural-presenter-ai`
@@ -10,7 +10,10 @@
 ## What Exists Today
 
 ### Documentation & Governance
-- `.ai/` durable project memory system initialized (modeled on `EnglishApp` conventions), including `ADR-001` through `ADR-004`.
+- `.ai/` durable project memory system initialized (modeled on `EnglishApp` conventions), including `ADR-001` through `ADR-005` and `experiments.md` (`ZS-001` baseline rated 7–8/10).
+- `AGENTS.md` — root auto-read entrypoint for AI coding agents.
+- `docs/EGE_ONBOARDING_AND_AI_BRIEF.md` — onboarding brief, copy-paste AI prompt, and active work tracks for Ege & Ege's AI assistant.
+- `docs/PROPOSALS_AND_SYNC.md` — shared Binh ↔ Ege proposal & approval board (`PROP-001`..`PROP-004` seeded).
 - `docs/PROJECT_GUIDE.md` — human-readable English guide for collaborators.
 - `docs/AI_AGENT_SPEC.md` — comprehensive machine-readable technical spec for ChatGPT / AI agents.
 - `docs/RECORDING_GUIDE.md` — speaker recording checklist, 60/40 spontaneous/scripted prompts, and CLI commands.
@@ -19,7 +22,7 @@
 - `src/schemas.py` — Pydantic v2 data contracts (`DatasetClip`, `PauseEvent`, `StyleProfile`, `FewShotExample`, `HumanizeRequest`, `HumanizeResponse`, `SynthesizeRequest`) + JSONL/JSON persistence helpers.
 - `src/humanizer.py` — Stage 1 Personalized Script Humanizer defaulting to local **Ollama/Gemma (`gemma3:4b`)** (`http://localhost:11434/v1`) with graceful offline profile fallback (`ADR-005`).
 - `src/synthesizer.py` — Stage 2 F5-TTS synthesizer supporting Zero-Shot reference clips (`refs/presentation_ref.wav`) and automatic per-speaker checkpoint/LoRA loading (`lora/`) with chunking & smooth audio stitching.
-- `app/web_ui.py` — Local Gradio Web UI (`http://127.0.0.1:7860`) with two tabs: **Presentation Studio** (Stage 1 + Stage 2) and **Dataset QA Reviewer** (listen, edit `raw_text`/`clean_text`, mark `verified`, rebuild `style_profile.json`).
+- `app/web_ui.py` — Local Gradio Web UI (`http://127.0.0.1:7860`) with two tabs: **Presentation Studio** (Stage 1 + Stage 2) and **Dataset QA Reviewer** (live verified progress counter, default `Only Unverified (TODO)` filter with `✅ OK` / `⬜ TODO` badges, one-click `✅ Verify & Next Clip`, and `Rebuild style_profile.json`).
 - `scripts/05_train_cloud.py` — Prepares F5-TTS fine-tuning dataset (`metadata.csv`, `duration.json`) and invokes `f5-tts_finetune-cli` with character tokenizer (`--tokenizer char`) for Cloud RTX 4090 training.
 - `.env.example` — Default Ollama/Gemma Stage 1 configuration template.
 - `scripts/00_extract_diarize_video.py` — Offline FFmpeg + Silero VAD + SpeechBrain ECAPA-TDNN speaker separation for multi-speaker videos.

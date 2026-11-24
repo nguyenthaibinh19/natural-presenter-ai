@@ -2,8 +2,8 @@
 
 Tabs:
   1. Presentation Studio: Stage 1 (Ollama/Gemma Humanizer) + Stage 2 (F5-TTS Voice Synthesis)
-  2. Dataset QA Reviewer: Listen to sliced clips, fix raw_text/clean_text, mark verified,
-     and refresh style_profile.json without touching raw JSON files.
+  2. Dataset QA Reviewer: Filter by TODO/OK/All, see live verified progress, listen to clips,
+     fix raw_text/clean_text, one-click Verify & Save Next, and rebuild style_profile.json.
 
 Usage:
     python app/web_ui.py
@@ -24,6 +24,7 @@ if str(ROOT_DIR) not in sys.path:
 
 from src.humanizer import humanize_script
 from src.schemas import (
+    DatasetClip,
     HumanizeRequest,
     SynthesizeRequest,
     load_metadata,
@@ -41,6 +42,8 @@ SAMPLE_SCRIPT = (
     "in baseline error after tuning the encoder resolution. "
     "Next, let's look at the main trade-off between speed and accuracy."
 )
+
+QA_FILTERS = ["Only Unverified (TODO)", "All Clips", "Only Verified (OK)"]
 
 synthesizer = PresentationSynthesizer(profiles_root=PROFILES_DIR, outputs_dir=OUTPUTS_DIR)
 
@@ -104,47 +107,90 @@ def on_synthesize(
 # --- Dataset QA Reviewer helpers ---
 
 
-def qa_list_clips(display_name: str) -> List[str]:
+def _format_clip_label(clip: DatasetClip) -> str:
+    badge = "✅ OK" if clip.verified else "⬜ TODO"
+    return f"{clip.clip_id} | {badge} | {clip.duration_sec:.1f}s"
+
+
+def _parse_clip_id(label: str | None) -> str:
+    if not label:
+        return ""
+    return label.split("|", 1)[0].strip()
+
+
+def qa_progress_markdown(display_name: str) -> str:
+    speakers = discover_speakers()
+    spk_id = speakers.get(display_name)
+    if not spk_id:
+        return "No speaker selected."
+    clips = load_metadata(PROFILES_DIR / spk_id / "metadata.jsonl")
+    if not clips:
+        return f"**{display_name}:** No clips found."
+
+    verified_clips = [c for c in clips if c.verified]
+    todo_clips = [c for c in clips if not c.verified]
+    total_min = sum(c.duration_sec for c in clips) / 60.0
+    ver_min = sum(c.duration_sec for c in verified_clips) / 60.0
+    pct = (len(verified_clips) / len(clips)) * 100.0
+    next_todo = todo_clips[0].clip_id if todo_clips else "None (All Done!)"
+
+    return (
+        f"### QA Progress — {display_name}\n"
+        f"- **Verified (`✅ OK`):** `{len(verified_clips)} / {len(clips)}` clips (**{pct:.1f}%**) "
+        f"| **Verified Audio:** `{ver_min:.2f} / {total_min:.2f} min`\n"
+        f"- **Remaining (`⬜ TODO`):** `{len(todo_clips)}` clips | **Next TODO Clip:** `{next_todo}`"
+    )
+
+
+def qa_list_clips(display_name: str, filter_mode: str = "Only Unverified (TODO)") -> List[str]:
     speakers = discover_speakers()
     spk_id = speakers.get(display_name)
     if not spk_id:
         return []
     clips = load_metadata(PROFILES_DIR / spk_id / "metadata.jsonl")
-    return [f"{c.clip_id} ({'OK' if c.verified else 'TODO'} | {c.duration_sec}s)" for c in clips]
+    if filter_mode == "Only Unverified (TODO)":
+        clips = [c for c in clips if not c.verified]
+    elif filter_mode == "Only Verified (OK)":
+        clips = [c for c in clips if c.verified]
+    return [_format_clip_label(c) for c in clips]
 
 
-def _parse_clip_id(label: str) -> str:
-    return label.split(" ", 1)[0].strip() if label else ""
-
-
-def qa_load_clip(display_name: str, clip_label: str):
+def qa_load_clip(display_name: str, clip_label: str | None):
     speakers = discover_speakers()
     spk_id = speakers.get(display_name)
     clip_id = _parse_clip_id(clip_label)
     if not spk_id or not clip_id:
-        return None, "", "", False, "Select a clip to review."
+        return None, "", "", False, "No clips match the current filter (all done or empty)."
 
     clips = load_metadata(PROFILES_DIR / spk_id / "metadata.jsonl")
     for c in clips:
         if c.clip_id == clip_id:
             wav_path = PROFILES_DIR / spk_id / c.audio_path
+            badge = "VERIFIED (OK)" if c.verified else "UNVERIFIED (TODO)"
             info = (
-                f"Clip `{c.clip_id}` | Duration: `{c.duration_sec}s` | "
+                f"[{badge}] Clip `{c.clip_id}` | Duration: `{c.duration_sec}s` | "
                 f"Fillers: `{c.fillers_used}` (`{c.filler_level}`)"
             )
             return str(wav_path), c.raw_text, c.clean_text or "", c.verified, info
     return None, "", "", False, f"Clip {clip_id} not found."
 
 
-def qa_on_speaker_change(display_name: str):
-    choices = qa_list_clips(display_name)
+def qa_on_speaker_or_filter_change(display_name: str, filter_mode: str):
+    progress = qa_progress_markdown(display_name)
+    choices = qa_list_clips(display_name, filter_mode)
     first = choices[0] if choices else None
-    audio, raw_t, clean_t, verified, info = qa_load_clip(display_name, first or "")
-    return gr.Dropdown(choices=choices, value=first), audio, raw_t, clean_t, verified, info
+    audio, raw_t, clean_t, verified, info = qa_load_clip(display_name, first)
+    return progress, gr.Dropdown(choices=choices, value=first), audio, raw_t, clean_t, verified, info
 
 
-def qa_save_clip(
-    display_name: str, clip_label: str, raw_text: str, clean_text: str, verified: bool
+def _save_clip_core(
+    display_name: str,
+    filter_mode: str,
+    clip_label: str | None,
+    raw_text: str,
+    clean_text: str,
+    verified: bool,
+    action_label: str,
 ):
     speakers = discover_speakers()
     spk_id = speakers[display_name]
@@ -152,22 +198,58 @@ def qa_save_clip(
     meta_path = PROFILES_DIR / spk_id / "metadata.jsonl"
     clips = load_metadata(meta_path)
 
-    next_idx = 0
-    for idx, c in enumerate(clips):
+    # Track current position in the filtered list before updating
+    old_choices = qa_list_clips(display_name, filter_mode)
+    old_ids = [_parse_clip_id(lbl) for lbl in old_choices]
+    old_pos = old_ids.index(clip_id) if clip_id in old_ids else 0
+
+    for c in clips:
         if c.clip_id == clip_id:
             c.raw_text = raw_text.strip()
             c.clean_text = clean_text.strip() or None
             c.verified = verified
-            next_idx = min(idx + 1, len(clips) - 1)
             break
 
     save_metadata(clips, meta_path)
-    choices = qa_list_clips(display_name)
-    next_label = choices[next_idx] if choices else None
-    audio, raw_t, clean_t, ver, _ = qa_load_clip(display_name, next_label or "")
+
+    progress = qa_progress_markdown(display_name)
+    new_choices = qa_list_clips(display_name, filter_mode)
+
+    if not new_choices:
+        next_label = None
+    elif filter_mode == "Only Unverified (TODO)" and verified:
+        # The just-verified clip dropped out of TODO list, so same index points to the next TODO
+        next_idx = min(old_pos, len(new_choices) - 1)
+        next_label = new_choices[next_idx]
+    else:
+        next_idx = min(old_pos + 1, len(new_choices) - 1)
+        next_label = new_choices[next_idx]
+
+    audio, raw_t, clean_t, ver, _ = qa_load_clip(display_name, next_label)
     verified_count = sum(1 for c in clips if c.verified)
-    status = f"Saved `{clip_id}`! Verified: {verified_count}/{len(clips)} clips."
-    return gr.Dropdown(choices=choices, value=next_label), audio, raw_t, clean_t, ver, status
+    status = f"{action_label} `{clip_id}` | Total Verified: {verified_count}/{len(clips)}"
+    return progress, gr.Dropdown(choices=new_choices, value=next_label), audio, raw_t, clean_t, ver, status
+
+
+def qa_verify_and_next(
+    display_name: str, filter_mode: str, clip_label: str | None, raw_text: str, clean_text: str
+):
+    return _save_clip_core(
+        display_name, filter_mode, clip_label, raw_text, clean_text, True, "✅ Verified & Saved"
+    )
+
+
+def qa_save_current(
+    display_name: str,
+    filter_mode: str,
+    clip_label: str | None,
+    raw_text: str,
+    clean_text: str,
+    verified: bool,
+):
+    return _save_clip_core(
+        display_name, filter_mode, clip_label, raw_text, clean_text, verified, "Saved"
+    )
 
 
 def qa_refresh_profile(display_name: str) -> str:
@@ -191,6 +273,7 @@ def build_ui() -> gr.Blocks:
     speakers = discover_speakers()
     speaker_names = list(speakers.keys())
     default_speaker = speaker_names[0] if speaker_names else None
+    default_filter = "Only Unverified (TODO)"
 
     with gr.Blocks(title="Natural Presenter AI") as demo:
         gr.Markdown(
@@ -273,17 +356,20 @@ def build_ui() -> gr.Blocks:
 
             # --- TAB 2: DATASET QA REVIEWER ---
             with gr.Tab("Dataset QA Reviewer"):
-                gr.Markdown(
-                    "Listen to each sliced clip, fix any misheard technical terms in **Verbatim `raw_text`** "
-                    "(keep all audible `uh`/`um`/`eh`!), and click **Save & Next** before cloud fine-tuning."
+                initial_progress = (
+                    qa_progress_markdown(default_speaker) if default_speaker else "No speaker found."
                 )
-                initial_clips = qa_list_clips(default_speaker) if default_speaker else []
+                initial_clips = (
+                    qa_list_clips(default_speaker, default_filter) if default_speaker else []
+                )
                 first_clip = initial_clips[0] if initial_clips else None
                 init_audio, init_raw, init_clean, init_ver, init_info = (
                     qa_load_clip(default_speaker, first_clip)
                     if (default_speaker and first_clip)
-                    else (None, "", "", False, "No clips loaded.")
+                    else (None, "", "", False, "All clips verified or none loaded!")
                 )
+
+                qa_progress_md = gr.Markdown(initial_progress)
 
                 with gr.Row():
                     qa_speaker_dd = gr.Dropdown(
@@ -291,11 +377,17 @@ def build_ui() -> gr.Blocks:
                         value=default_speaker,
                         label="Speaker Dataset",
                     )
-                    qa_clip_dd = gr.Dropdown(
-                        choices=initial_clips,
-                        value=first_clip,
-                        label="Select Clip",
+                    qa_filter_radio = gr.Radio(
+                        choices=QA_FILTERS,
+                        value=default_filter,
+                        label="Filter Clips (default hides already-reviewed clips)",
                     )
+
+                qa_clip_dd = gr.Dropdown(
+                    choices=initial_clips,
+                    value=first_clip,
+                    label="Select Clip (✅ OK = already reviewed, ⬜ TODO = needs review)",
+                )
 
                 qa_audio = gr.Audio(value=init_audio, label="Clip Audio", type="filepath")
                 qa_raw_box = gr.Textbox(
@@ -310,15 +402,32 @@ def build_ui() -> gr.Blocks:
                 )
                 with gr.Row():
                     qa_verified_chk = gr.Checkbox(value=init_ver, label="Verified (1:1 accurate)")
-                    qa_save_btn = gr.Button("Save & Next Clip", variant="primary")
-                    qa_refresh_btn = gr.Button("Rebuild style_profile.json")
+                    qa_verify_next_btn = gr.Button(
+                        "✅ Verify & Next Clip (1-click)", variant="primary"
+                    )
+                    qa_save_btn = gr.Button("Save (Keep Checkbox As-Is) & Next")
+                    qa_refresh_btn = gr.Button("Rebuild style_profile.json (Run once at end)")
 
                 qa_status = gr.Textbox(value=init_info, label="QA Status", interactive=False)
 
                 qa_speaker_dd.change(
-                    fn=qa_on_speaker_change,
-                    inputs=qa_speaker_dd,
+                    fn=qa_on_speaker_or_filter_change,
+                    inputs=[qa_speaker_dd, qa_filter_radio],
                     outputs=[
+                        qa_progress_md,
+                        qa_clip_dd,
+                        qa_audio,
+                        qa_raw_box,
+                        qa_clean_box,
+                        qa_verified_chk,
+                        qa_status,
+                    ],
+                )
+                qa_filter_radio.change(
+                    fn=qa_on_speaker_or_filter_change,
+                    inputs=[qa_speaker_dd, qa_filter_radio],
+                    outputs=[
+                        qa_progress_md,
                         qa_clip_dd,
                         qa_audio,
                         qa_raw_box,
@@ -332,16 +441,37 @@ def build_ui() -> gr.Blocks:
                     inputs=[qa_speaker_dd, qa_clip_dd],
                     outputs=[qa_audio, qa_raw_box, qa_clean_box, qa_verified_chk, qa_status],
                 )
-                qa_save_btn.click(
-                    fn=qa_save_clip,
+                qa_verify_next_btn.click(
+                    fn=qa_verify_and_next,
                     inputs=[
                         qa_speaker_dd,
+                        qa_filter_radio,
+                        qa_clip_dd,
+                        qa_raw_box,
+                        qa_clean_box,
+                    ],
+                    outputs=[
+                        qa_progress_md,
+                        qa_clip_dd,
+                        qa_audio,
+                        qa_raw_box,
+                        qa_clean_box,
+                        qa_verified_chk,
+                        qa_status,
+                    ],
+                )
+                qa_save_btn.click(
+                    fn=qa_save_current,
+                    inputs=[
+                        qa_speaker_dd,
+                        qa_filter_radio,
                         qa_clip_dd,
                         qa_raw_box,
                         qa_clean_box,
                         qa_verified_chk,
                     ],
                     outputs=[
+                        qa_progress_md,
                         qa_clip_dd,
                         qa_audio,
                         qa_raw_box,
