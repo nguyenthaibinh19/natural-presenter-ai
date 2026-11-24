@@ -25,3 +25,6 @@ Durable lessons captured during development so future contributors and AI agents
 
 8. **F5-TTS Fine-Tuning Tokenizer & Warmup Pitfalls (2026-11-24):**  
    `F5TTS_v1_Base` (`model_1250000.safetensors`) uses a 2545-token pretrained `vocab.txt` under `--tokenizer pinyin` (which keeps English text as raw characters with zero G2P normalization). Fine-tuning MUST reuse that exact pretrained `vocab.txt` + `--tokenizer pinyin` so text embeddings load cleanly, and MUST override `--num_warmup_updates` from the default `20000` down to `100` for ~30-minute datasets (~1,500–2,000 total updates).
+
+9. **University JupyterHub Pod OOMKill from F5-TTS `num_workers=16` (2026-11-24):**  
+   F5-TTS `trainer.py` hardcodes `DataLoader(num_workers=16, persistent_workers=True, pin_memory=True)`, which forks 16 Python processes and exhausts container CPU RAM / `/dev/shm` on Kubernetes JupyterHub pods (triggering `Server unavailable or unreachable`), even when GPU VRAM (NVIDIA L40 44GB) is nearly empty. Patching `trainer.py` to `num_workers=0, persistent_workers=False, pin_memory=False` eliminates the pod OOMKill cleanly.
