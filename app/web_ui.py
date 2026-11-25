@@ -13,6 +13,7 @@ Usage:
 from __future__ import annotations
 
 import json
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -102,10 +103,52 @@ def on_humanize(
     return resp.humanized_script, f"Stage 1 complete — {mode}"
 
 
+def list_speaker_refs(display_name: str | None) -> List[str]:
+    if not display_name:
+        return []
+    spk_id = discover_speakers().get(display_name)
+    if not spk_id:
+        return []
+    return synthesizer.list_references(spk_id)
+
+
+def default_ref_for_speaker(display_name: str | None) -> str | None:
+    refs = list_speaker_refs(display_name)
+    if not refs:
+        return None
+    if "partA_natural_slow_ref" in refs:
+        return "partA_natural_slow_ref"
+    return refs[0]
+
+
+def get_ref_preview(display_name: str | None, ref_name: str | None):
+    if not display_name or not ref_name:
+        return None, "No reference clip selected."
+    spk_id = discover_speakers().get(display_name)
+    if not spk_id:
+        return None, "Speaker not found."
+    refs_dir = PROFILES_DIR / spk_id / "refs"
+    wav_p = refs_dir / f"{ref_name}.wav"
+    txt_p = refs_dir / f"{ref_name}.txt"
+    if not wav_p.exists():
+        return None, f"Missing {wav_p.name}"
+    txt = txt_p.read_text(encoding="utf-8").strip() if txt_p.exists() else ""
+    return str(wav_p), f"**Reference transcript (`{ref_name}`):** _{txt}_"
+
+
+def on_studio_speaker_change(display_name: str):
+    summary = get_speaker_summary(display_name)
+    refs = list_speaker_refs(display_name)
+    chosen = default_ref_for_speaker(display_name)
+    ref_wav, ref_md = get_ref_preview(display_name, chosen)
+    return summary, gr.Dropdown(choices=refs, value=chosen), ref_wav, ref_md
+
+
 def on_synthesize(
     display_name: str,
     humanized_script: str,
     tone: str,
+    ref_name: str | None,
     speed: float,
     quality_mode: str,
     paragraph_pause_ms: int,
@@ -117,6 +160,7 @@ def on_synthesize(
         speaker_id=spk_id,
         humanized_script=humanized_script,
         tone=tone.lower(),
+        ref_name=ref_name,
         speed=speed,
         nfe_step=nfe_step,
         paragraph_pause_ms=int(paragraph_pause_ms),
@@ -288,6 +332,29 @@ def qa_refresh_profile(display_name: str) -> str:
     return f"Style profile refreshed!\n{res.stdout.strip()}"
 
 
+def qa_save_as_reference(display_name: str, clip_label: str | None, custom_ref_name: str) -> str:
+    spk_id = discover_speakers().get(display_name)
+    clip_id = _parse_clip_id(clip_label)
+    if not spk_id or not clip_id:
+        return "Select a clip first."
+    safe_name = "".join(ch if ch.isalnum() or ch in ("_", "-") else "_" for ch in custom_ref_name.strip())
+    if not safe_name:
+        safe_name = f"{clip_id}_ref"
+    if not safe_name.endswith("_ref"):
+        safe_name = f"{safe_name}_ref"
+
+    spk_dir = PROFILES_DIR / spk_id
+    clips = load_metadata(spk_dir / "metadata.jsonl")
+    for c in clips:
+        if c.clip_id == clip_id:
+            refs_dir = spk_dir / "refs"
+            refs_dir.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(spk_dir / c.audio_path, refs_dir / f"{safe_name}.wav")
+            (refs_dir / f"{safe_name}.txt").write_text(c.raw_text.strip(), encoding="utf-8")
+            return f"Saved `{clip_id}` as Reference Style `{safe_name}`! Switch to Presentation Studio (re-select speaker to refresh list)."
+    return f"Clip `{clip_id}` not found."
+
+
 # --- Pronunciation Dictionary helpers ---
 
 
@@ -334,11 +401,20 @@ def build_ui() -> gr.Blocks:
         with gr.Tabs():
             # --- TAB 1: PRESENTATION STUDIO ---
             with gr.Tab("Presentation Studio"):
+                init_refs = list_speaker_refs(default_speaker)
+                init_ref = default_ref_for_speaker(default_speaker)
+                init_ref_wav, init_ref_md = get_ref_preview(default_speaker, init_ref)
+
                 with gr.Row():
                     speaker_dd = gr.Dropdown(
                         choices=speaker_names,
                         value=default_speaker,
                         label="Select Speaker Profile",
+                    )
+                    ref_style_dd = gr.Dropdown(
+                        choices=init_refs,
+                        value=init_ref,
+                        label="Reference Style (Voice Vibe & Pace)",
                     )
                     filler_radio = gr.Radio(
                         choices=["None", "Low", "Medium", "High"],
@@ -364,7 +440,22 @@ def build_ui() -> gr.Blocks:
                         label="Include subtle self-repairs & varied hesitations in long scripts (e.g., 'accuracy— sorry, error')",
                     )
 
-                speaker_dd.change(fn=get_speaker_summary, inputs=speaker_dd, outputs=profile_md)
+                with gr.Accordion("Preview Selected Reference Clip (click to listen)", open=False):
+                    ref_preview_md = gr.Markdown(init_ref_md)
+                    ref_preview_audio = gr.Audio(
+                        value=init_ref_wav, label="Reference Clip Audio", type="filepath"
+                    )
+
+                speaker_dd.change(
+                    fn=on_studio_speaker_change,
+                    inputs=speaker_dd,
+                    outputs=[profile_md, ref_style_dd, ref_preview_audio, ref_preview_md],
+                )
+                ref_style_dd.change(
+                    fn=get_ref_preview,
+                    inputs=[speaker_dd, ref_style_dd],
+                    outputs=[ref_preview_audio, ref_preview_md],
+                )
 
                 clean_box = gr.Textbox(
                     label="1. Clean Presentation Script (Separate slides/sections with a blank line for natural pauses)",
@@ -389,9 +480,9 @@ def build_ui() -> gr.Blocks:
                     speed_slider = gr.Slider(
                         minimum=0.80,
                         maximum=1.20,
-                        value=1.0,
+                        value=0.90,
                         step=0.05,
-                        label="Speaking Speed",
+                        label="Speaking Speed (0.85–0.90 recommended)",
                     )
                     para_pause_slider = gr.Slider(
                         minimum=200,
@@ -430,6 +521,7 @@ def build_ui() -> gr.Blocks:
                         speaker_dd,
                         humanized_box,
                         tone_dd,
+                        ref_style_dd,
                         speed_slider,
                         quality_radio,
                         para_pause_slider,
@@ -490,6 +582,13 @@ def build_ui() -> gr.Blocks:
                     )
                     qa_save_btn = gr.Button("Save (Keep Checkbox As-Is) & Next")
                     qa_refresh_btn = gr.Button("Rebuild style_profile.json (Run once at end)")
+
+                with gr.Row():
+                    qa_ref_name_box = gr.Textbox(
+                        label="Save Current Clip as Reference Style (optional)",
+                        placeholder="e.g., relaxed_partA_ref",
+                    )
+                    qa_save_ref_btn = gr.Button("⭐ Save Clip as Reference Style")
 
                 qa_status = gr.Textbox(value=init_info, label="QA Status", interactive=False)
 
@@ -566,6 +665,11 @@ def build_ui() -> gr.Blocks:
                 qa_refresh_btn.click(
                     fn=qa_refresh_profile,
                     inputs=qa_speaker_dd,
+                    outputs=qa_status,
+                )
+                qa_save_ref_btn.click(
+                    fn=qa_save_as_reference,
+                    inputs=[qa_speaker_dd, qa_clip_dd, qa_ref_name_box],
                     outputs=qa_status,
                 )
 

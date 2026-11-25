@@ -89,11 +89,34 @@ class PresentationSynthesizer:
                 return found[0]
         return None
 
+    def list_references(self, speaker_id: str) -> List[str]:
+        """List available reference clip stems inside profiles/<speaker_id>/refs/."""
+        refs_dir = self.profiles_root / speaker_id / "refs"
+        if not refs_dir.exists():
+            return []
+        stems = [
+            p.stem
+            for p in sorted(refs_dir.glob("*.wav"))
+            if (refs_dir / f"{p.stem}.txt").exists()
+        ]
+        return stems
+
     def synthesize(self, req: SynthesizeRequest) -> Tuple[Path, str]:
         """Synthesize short or long multi-paragraph presentation audio."""
         spk_dir = self.profiles_root / req.speaker_id
-        ref_wav = spk_dir / "refs" / "presentation_ref.wav"
-        ref_txt_path = spk_dir / "refs" / "presentation_ref.txt"
+        refs_dir = spk_dir / "refs"
+
+        chosen_ref = req.ref_name
+        if not chosen_ref:
+            avail = self.list_references(req.speaker_id)
+            chosen_ref = (
+                "partA_natural_slow_ref"
+                if "partA_natural_slow_ref" in avail
+                else (avail[0] if avail else "presentation_ref")
+            )
+
+        ref_wav = refs_dir / f"{chosen_ref}.wav"
+        ref_txt_path = refs_dir / f"{chosen_ref}.txt"
 
         if not ref_wav.exists() or not ref_txt_path.exists():
             raise FileNotFoundError(
@@ -105,9 +128,9 @@ class PresentationSynthesizer:
         tts = self._get_model(custom_ckpt)
 
         mode_info = (
-            f"Fine-tuned checkpoint ({custom_ckpt.name})"
+            f"Fine-tuned ({custom_ckpt.name}) | ref: {chosen_ref}"
             if custom_ckpt
-            else f"Zero-Shot F5-TTS (ref: {ref_wav.name})"
+            else f"Zero-Shot F5-TTS | ref: {chosen_ref}"
         )
 
         # Split by blank lines to insert natural slide/paragraph pauses, and apply pronunciation safety pass

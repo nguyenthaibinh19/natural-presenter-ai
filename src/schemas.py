@@ -122,7 +122,11 @@ class SynthesizeRequest(BaseModel):
     speaker_id: str
     humanized_script: str = Field(..., min_length=1)
     tone: ToneType = Field(default="presentation")
-    speed: float = Field(default=1.0, ge=0.75, le=1.25)
+    ref_name: Optional[str] = Field(
+        default=None,
+        description="Reference clip stem inside profiles/<speaker_id>/refs/ (without .wav).",
+    )
+    speed: float = Field(default=0.90, ge=0.75, le=1.25)
     nfe_step: int = Field(default=16, ge=8, le=64)
     paragraph_pause_ms: int = Field(
         default=650,
