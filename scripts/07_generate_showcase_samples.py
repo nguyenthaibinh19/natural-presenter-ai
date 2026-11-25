@@ -181,12 +181,12 @@ def main() -> None:
         sf.write(str(out6), combined, sr1, subtype="PCM_16")
         print(f"Saved {out6.name} ({len(combined) / sr1:.1f}s) -> Slide transition pause + self-repair")
 
-    # Optional opt-in co-author handoff (disabled by default until explicit consent)
-    if args.include_coauthor and should_run("06_multi_speaker_handoff.wav"):
+    # 7. Multi-Speaker Joint Presentation Handoff (Speaker 1 vn_01 -> Speaker 2 vn_02, consented per docs/VOICE_CONSENT.md)
+    if should_run("07_multi_speaker_handoff.wav") or (args.include_coauthor and should_run("07")):
         w1, _ = synth.synthesize(
             SynthesizeRequest(
                 speaker_id="vn_01",
-                humanized_script="So, uh, looking at Exercise two, spatial sixteen lowered test M S E by fifty-nine percent with the exact same parameters. Now I will hand over to Ege for colourisation.",
+                humanized_script="So, uh, looking at model compression, pruning to F P sixteen cut the checkpoint down to six hundred forty-three megabytes with zero quality loss. Now I will, like, hand over to Ege for multi-speaker style profiles.",
                 ref_name="partA_natural_slow_ref",
                 speed=0.90,
                 nfe_step=32,
@@ -195,8 +195,8 @@ def main() -> None:
         w2, _ = synth.synthesize(
             SynthesizeRequest(
                 speaker_id="vn_02",
-                humanized_script="Thanks! Uh, for colourisation, predicting chroma while reusing input luminance clearly outperformed direct R G B.",
-                speed=0.90,
+                humanized_script="Thanks! Uh, every speaker has a completely separate profile, so, eh, my faster pace and Turkish-English accent stay totally independent from Binh's voice.",
+                speed=0.96,
                 nfe_step=32,
             )
         )
@@ -208,9 +208,21 @@ def main() -> None:
             sr=sr1,
             paragraph_pause_ms=700,
         )
-        out_co = SAMPLES_DIR / "06_multi_speaker_handoff.wav"
-        sf.write(str(out_co), combined, sr1, subtype="PCM_16")
-        print(f"Saved {out_co.name} ({len(combined) / sr1:.1f}s) -> Multi-speaker handoff (consented)")
+        out7 = SAMPLES_DIR / "07_multi_speaker_handoff.wav"
+        sf.write(str(out7), combined, sr1, subtype="PCM_16")
+        print(f"Saved {out7.name} ({len(combined) / sr1:.1f}s) -> Multi-speaker handoff (consented)")
+
+    # 8. Speaker 2 (vn_02 — Ege) Independent Accent & Cadence Demo (146.6 WPM, uh / eh / um)
+    if should_run("08_ege_cadence_demo.wav"):
+        render_to(
+            synth,
+            "08_ege_cadence_demo.wav",
+            "vn_02",
+            "Hello everyone, uh, today I want to walk you through our C N N autoencoder results. Replacing max pooling with, eh, stride-two convolutions lowered test M S E by twenty-five percent across all three seeds.",
+            ref_name=None,
+            speed=0.96,
+            nfe_step=32,
+        )
 
     print(f"\nShowcase samples ready in {SAMPLES_DIR}! Upload hf_space/ to Hugging Face Spaces.")
 

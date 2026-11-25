@@ -27,7 +27,8 @@ from huggingface_hub.errors import LocalTokenNotFoundError
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
 HF_SPACE_DIR = ROOT_DIR / "hf_space"
-COAUTHOR_FILES = {"06_multi_speaker_handoff.wav"}
+CONSENT_DOC = ROOT_DIR / "docs" / "VOICE_CONSENT.md"
+COAUTHOR_FILES = {"07_multi_speaker_handoff.wav", "08_ege_cadence_demo.wav"}
 
 
 def main() -> None:
@@ -55,11 +56,16 @@ def main() -> None:
         print("ERROR: No .wav files found in hf_space/samples/. Run scripts/07_generate_showcase_samples.py first.")
         sys.exit(1)
 
-    # Voice Consent Guard
-    blocked = [p.name for p in wavs if p.name in COAUTHOR_FILES and not args.allow_coauthor_consent]
+    # Voice Consent Guard: require docs/VOICE_CONSENT.md to exist (or --allow-coauthor-consent)
+    has_consent_record = CONSENT_DOC.is_file() and "Consented (Co-Creator" in CONSENT_DOC.read_text(encoding="utf-8")
+    blocked = [
+        p.name
+        for p in wavs
+        if p.name in COAUTHOR_FILES and not (args.allow_coauthor_consent or has_consent_record)
+    ]
     if blocked:
         print(f"BLOCKED by Voice Consent Guard: {blocked}")
-        print("Remove these files from hf_space/samples/ or pass --allow-coauthor-consent once consented.")
+        print("Document explicit co-author consent in docs/VOICE_CONSENT.md or pass --allow-coauthor-consent.")
         sys.exit(1)
 
     api = HfApi()
@@ -87,7 +93,7 @@ def main() -> None:
         repo_id=args.repo_id,
         repo_type="space",
         ignore_patterns=["__pycache__/*", "*.pyc", ".DS_Store", "app.py", "requirements.txt"],
-        commit_message="Deploy Natural Presenter AI portfolio showcase (Static Space, self-recorded voice only)",
+        commit_message="Deploy Natural Presenter AI portfolio showcase (Static Space, consented Binh & Ege benchmarks)",
     )
 
     print(f"\nDEPLOY_OK: https://huggingface.co/spaces/{args.repo_id}")

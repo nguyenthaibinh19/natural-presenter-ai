@@ -154,6 +154,6 @@ natural-presenter-ai/
 
 ## Responsible AI, Privacy & Voice Consent
 
-- **Strict Consent Policy:** This repository is built exclusively for **self-cloning or explicitly consented team voice profiles** (such as delivering your own technical presentations or educational walkthroughs). Do not use this tool to impersonate any person without explicit informed consent.
+- **Strict Consent Policy ([docs/VOICE_CONSENT.md](docs/VOICE_CONSENT.md)):** This repository is built exclusively for **self-cloning or explicitly consented team voice profiles** (such as delivering your own technical presentations or educational walkthroughs). All showcase clips featuring co-creators **Thai Binh Nguyen (`vn_01`)** and **Ege Deniz (`vn_02`)** are published with explicit speaker consent. Do not use this tool to impersonate any person without explicit informed consent.
 - **No Voice Data or Weights Distributed:** All raw audio recordings (`profiles/`), trained voice weights (`*.safetensors`, `*.pt`), and private presentations (`presentations/`) are excluded via `.gitignore` and never committed to GitHub.
 - **Local-First & GDPR-Friendly:** Both Stage 1 (Ollama Gemma 3) and Stage 2 (F5-TTS) run 100% locally offline so private voice biometrics and internal presentation scripts never leave the user's machine.

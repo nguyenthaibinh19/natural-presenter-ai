@@ -455,7 +455,7 @@
     <!-- TAB 1: AUDIO BENCHMARKS -->
     <section id="tab-audio" class="tab-panel active">
       <div class="notice">
-        <strong>Responsible AI &amp; Voice Consent:</strong> All 6 audio benchmarks below were generated locally on an RTX 5060 Laptop GPU (<code>nfe_step=32</code>) using exclusively the consenting author's self-recorded voice (<code>vn_01</code>, Vietnamese-English). No personal datasets or trained voice checkpoints are distributed publicly.
+        <strong>Responsible AI &amp; Voice Consent:</strong> All 8 audio benchmarks below were generated locally on an RTX 5060 Laptop GPU (<code>nfe_step=32</code>) using exclusively self-recorded, explicitly consented voices of co-creators <strong>Thai Binh Nguyen (<code>vn_01</code>)</strong> and <strong>Ege Deniz (<code>vn_02</code>)</strong> (see <code>docs/VOICE_CONSENT.md</code>). No raw datasets or trained voice checkpoints are distributed publicly.
       </div>
 
       <h2 class="section-title">A/B Listening Test — Zero-Shot vs. Fine-Tuned (<code>FT-001</code>)</h2>
@@ -536,6 +536,34 @@
             "So, uh, looking at the model compression step, our raw training checkpoint was three point three eight gigabytes." [750 ms pause] "However, after stripping the optimizer state, we, we pruned the F P sixteen weights down to six hundred forty-three megabytes for local G P U inference."
           </div>
           <audio controls preload="metadata" src="samples/06_self_repair_and_slide_pause.wav"></audio>
+        </article>
+      </div>
+
+      <h2 class="section-title">Multi-Speaker Accent Preservation &amp; Individual Cadence (<code>vn_01</code> + <code>vn_02</code>)</h2>
+      <div class="grid-2">
+        <article class="card featured">
+          <div class="card-header">
+            <h3 class="card-title">G. Two-Speaker Handoff (Binh → Ege)</h3>
+            <span class="pill green">102.7 WPM → 146.6 WPM</span>
+          </div>
+          <p class="card-desc">Seamless joint presentation handoff from Vietnamese-English (<code>vn_01</code>, fine-tuned) to Turkish-English (<code>vn_02</code>, zero-shot) with a 700 ms pause.</p>
+          <div class="transcript">
+            <strong>Binh:</strong> "So, uh, looking at model compression, pruning to F P sixteen cut the checkpoint down to six hundred forty-three megabytes with zero quality loss. Now I will, like, hand over to Ege for multi-speaker style profiles."<br />
+            <strong>Ege:</strong> "Thanks! Uh, every speaker has a completely separate profile, so, eh, my faster pace and Turkish-English accent stay totally independent from Binh's voice."
+          </div>
+          <audio controls preload="metadata" src="samples/07_multi_speaker_handoff.wav"></audio>
+        </article>
+
+        <article class="card">
+          <div class="card-header">
+            <h3 class="card-title">H. Speaker 2 Independent Cadence (Ege — <code>vn_02</code>)</h3>
+            <span class="pill">Zero-Shot · uh 79%, eh 12%</span>
+          </div>
+          <p class="card-desc">Same benchmark sentence delivered with Speaker 2's faster speaking pace (<code>146.6 WPM</code>) and distinct filler distribution (<code>uh</code> / <code>eh</code>) — zero accent bleed.</p>
+          <div class="transcript">
+            "Hello everyone, uh, today I want to walk you through our C N N autoencoder results. Replacing max pooling with, eh, stride-two convolutions lowered test M S E by twenty-five percent across all three seeds."
+          </div>
+          <audio controls preload="metadata" src="samples/08_ege_cadence_demo.wav"></audio>
         </article>
       </div>
     </section>
