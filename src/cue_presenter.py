@@ -470,6 +470,25 @@ class LiveCueController:
         self.enable_mouse_trigger = enable_mouse_x2
         self._stop_poll.clear()
 
+        # Detect if launched inside an isolated non-Default Windows desktop (e.g., AI agent sandbox)
+        desktop_warning = ""
+        if sys.platform == "win32":
+            try:
+                import ctypes
+
+                u32 = ctypes.windll.user32
+                k32 = ctypes.windll.kernel32
+                hdesk = u32.GetThreadDesktop(k32.GetCurrentThreadId())
+                buf = ctypes.create_unicode_buffer(256)
+                u32.GetUserObjectInformationW(hdesk, 2, buf, 256, None)
+                if buf.value and buf.value.lower() != "default":
+                    desktop_warning = (
+                        f" ⚠️ WARNING: Running in isolated desktop '{buf.value}' — Windows blocks global "
+                        f"hotkeys here! Double-click D:\\natural-presenter-ai\\start_presenter.bat instead."
+                    )
+            except Exception:
+                pass
+
         def poll_win32_keys():
             import ctypes
             import time
@@ -534,7 +553,7 @@ class LiveCueController:
         mouse_note = " + Mouse Side Buttons" if enable_mouse_x2 else ""
         self.last_event = (
             f"🟢 ARMED (Win32 Global): F9 or Alt+Space = Play | F8 or Alt+R = Replay | "
-            f"F10 or Alt+S = Stop | F7/F11 or Alt+←/→ = Skip{mouse_note}"
+            f"F10 or Alt+S = Stop | F7/F11 or Alt+←/→ = Skip{mouse_note}{desktop_warning}"
         )
         return self.last_event
 
