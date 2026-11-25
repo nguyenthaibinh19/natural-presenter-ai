@@ -17,6 +17,6 @@
 - [ ] Evaluate whether LoRA alone is sufficient for strong phonetic shifts or if per-speaker full fine-tune checkpoints are needed
 
 ## Phase 3 — Product Polish & Offline Scaling
-- [ ] Long-form presentation chunking & seamless crossfade stitching (10–30 min presentations)
-- [ ] Slide-by-slide script management and pacing controls in Web UI
+- [x] Long-form presentation chunking & seamless inter-paragraph pause stitching (`src/synthesizer.py`)
+- [x] Human-driven live Cue Presenter Studio (`ADR-006`, `src/cue_presenter.py` + Web UI Tab 4 with PDF/ipynb cue parser, pre-rendered audio, and global `F9`/`Mouse4` hotkeys for OBS recording)
 - [ ] Optional QLoRA fine-tuned local LLM for 100% offline Stage 1 humanization

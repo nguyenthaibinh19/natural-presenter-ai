@@ -136,6 +136,31 @@ class SynthesizeRequest(BaseModel):
     )
 
 
+class CueItem(BaseModel):
+    """Single presentation cue card combining visual pointing instructions + spoken audio."""
+
+    cue_id: str = Field(..., description="Short cue ID, e.g., N2a, A1, B1, N5, D1.")
+    source: str = Field(..., description="Document location, e.g., 'Report Page 1' or 'Notebook Cell 10'.")
+    speaker_id: str = Field(default="vn_01", description="Assigned speaker profile ID.")
+    ref_name: Optional[str] = Field(default=None, description="Optional reference style override.")
+    point_to: str = Field(..., description="Visual instruction telling the human where to move the cursor.")
+    clean_text: str = Field(..., description="Original polished SAY script for this cue.")
+    humanized_text: Optional[str] = Field(
+        default=None,
+        description="Stage 1 humanized + acronym-normalized script ready for TTS.",
+    )
+    transition_note: str = Field(default="", description="Hint for what window/page/cell to open next.")
+    audio_path: Optional[str] = Field(default=None, description="Pre-rendered WAV file path.")
+    duration_sec: float = Field(default=0.0, ge=0.0)
+
+
+class CueDeck(BaseModel):
+    """Ordered collection of cues for a full live-recorded presentation."""
+
+    project_name: str
+    cues: List[CueItem] = Field(default_factory=list)
+
+
 def load_metadata(path: Path) -> List[DatasetClip]:
     """Load all DatasetClip records from a metadata.jsonl file."""
     if not path.exists():

@@ -10,7 +10,7 @@
 ## What Exists Today
 
 ### Documentation & Governance
-- `.ai/` durable project memory system initialized (modeled on `EnglishApp` conventions), including `ADR-001` through `ADR-005` and `experiments.md` (`ZS-001` baseline rated 7–8/10).
+- `.ai/` durable project memory system initialized (modeled on `EnglishApp` conventions), including `ADR-001` through `ADR-006` and `experiments.md` (`FT-001` rated 9.5–10/10).
 - `AGENTS.md` — root auto-read entrypoint for AI coding agents.
 - `docs/EGE_ONBOARDING_AND_AI_BRIEF.md` — onboarding brief, copy-paste AI prompt, and active work tracks for Ege & Ege's AI assistant.
 - `docs/PROPOSALS_AND_SYNC.md` — shared Binh ↔ Ege proposal & approval board (`PROP-001`..`PROP-004` seeded).
@@ -22,8 +22,9 @@
 - `src/schemas.py` — Pydantic v2 data contracts (`DatasetClip`, `PauseEvent`, `StyleProfile`, `FewShotExample`, `HumanizeRequest`, `HumanizeResponse`, `SynthesizeRequest`) + JSONL/JSON persistence helpers.
 - `src/humanizer.py` — Stage 1 Long-Form Personalized Script Humanizer defaulting to local **Ollama/Gemma (`gemma3:4b`)** (`ADR-005`) with paragraph-by-paragraph disfluency budgeting (diverse fillers + optional subtle self-repairs) and automatic acronym/pronunciation normalization (`config/pronunciation_map.json`).
 - `src/synthesizer.py` — Stage 2 F5-TTS synthesizer supporting Zero-Shot and auto-detected per-speaker checkpoints (`lora/`), selectable **Reference Style** (`refs/*.wav` + `.txt`), pronunciation safety pass, and multi-paragraph/slide synthesis with configurable inter-paragraph pauses (`paragraph_pause_ms`).
+- `src/cue_presenter.py` — Human-Driven Live Cue Presenter (`ADR-006`): parses Reading Copy PDFs (`A1..D1`) and annotated Jupyter notebooks (`# N4a | POINT TO ... # SAY: ...`), merges sentence fragments, batch-humanizes & pre-renders per-speaker `.wav` cues, and drives 0ms-latency live OBS playback via Windows global hotkeys (`F9`/`F8`/`F10`/`F7`/`F11`) + optional Mouse Side Buttons (`pynput` + `winsound`).
 - `config/pronunciation_map.json` — Editable technical acronym/term lexicon (e.g., `MSE` → `M S E`, `CNN` → `C N N`, `ReLU` → `ray-loo`, `VRAM` → `V-ram`).
-- `app/web_ui.py` — Local Gradio Web UI (`http://127.0.0.1:7860`) with three tabs: **Presentation Studio** (Stage 1 with self-repair toggle + Stage 2 with **Reference Style** selector/preview, default `0.90` speed, slide/paragraph pause slider), **Dataset QA Reviewer** (live verified progress, default TODO filter, 1-click Verify & Next, Save Clip as Reference Style), and **Pronunciation Dictionary** (live JSON rule editor).
+- `app/web_ui.py` — Local Gradio Web UI (`http://127.0.0.1:7860`) with four tabs: **Presentation Studio**, **Dataset QA Reviewer**, **Pronunciation Dictionary**, and **Cue Presenter (Live OBS)** (pre-loaded with 22 parsed cues from `lab2_demo`).
 - `scripts/05_train_cloud.py` — Prepares F5-TTS fine-tuning dataset (`metadata.csv`, `duration.json`) and invokes `f5-tts_finetune-cli` with pretrained 2545-token vocab (`--tokenizer pinyin`, raw chars for English), `--num_warmup_updates 100`, and `--bnb_optimizer`.
 - `scripts/06_export_humanizer_sft.py` — Exports verified `(clean_text -> raw_text)` pairs across speakers into ChatML JSONL (`profiles/humanizer_sft.jsonl`) for optional future QLoRA fine-tuning of Gemma/Qwen Stage 1 models.
 - `notebooks/05_finetune_f5tts_colab.ipynb` — Ready-to-run Google Colab Pro notebook (NVIDIA L4 / Tesla T4) with Google Drive auto-checkpointing and Cell 6 slim FP16 `.safetensors` exporter (~643 MB).

@@ -10,6 +10,7 @@ env/
 
 # Datasets, Audio & Media (keep out of Git)
 profiles/
+presentations/
 datasets/
 data/
 *.wav

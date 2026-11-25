@@ -25,6 +25,14 @@ ROOT_DIR = Path(__file__).resolve().parent.parent
 if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
+from src.cue_presenter import (
+    LiveCueController,
+    build_presentation_deck,
+    humanize_cue_deck,
+    load_cue_deck,
+    prerender_cue_deck,
+    save_cue_deck,
+)
 from src.humanizer import (
     DEFAULT_PRONUNCIATION_PATH,
     humanize_script,
@@ -43,6 +51,7 @@ from src.synthesizer import PresentationSynthesizer
 
 PROFILES_DIR = ROOT_DIR / "profiles"
 OUTPUTS_DIR = ROOT_DIR / "outputs"
+PRESENTATIONS_DIR = ROOT_DIR / "presentations"
 
 SAMPLE_SCRIPT = (
     "Hello everyone, today I want to walk you through our experiment results. "
@@ -54,6 +63,7 @@ SAMPLE_SCRIPT = (
 QA_FILTERS = ["Only Unverified (TODO)", "All Clips", "Only Verified (OK)"]
 
 synthesizer = PresentationSynthesizer(profiles_root=PROFILES_DIR, outputs_dir=OUTPUTS_DIR)
+live_controller = LiveCueController()
 
 
 def discover_speakers() -> Dict[str, str]:
@@ -386,6 +396,191 @@ def pron_save_raw_json(raw_json: str) -> str:
         return f"Invalid JSON: {exc}"
 
 
+# --- Live Cue Presenter helpers ---
+
+
+def cue_list_decks() -> List[str]:
+    if not PRESENTATIONS_DIR.exists():
+        return []
+    return sorted(p.parent.name for p in PRESENTATIONS_DIR.glob("*/deck.json"))
+
+
+def _deck_path(project_name: str) -> Path:
+    return PRESENTATIONS_DIR / project_name / "deck.json"
+
+
+def _cue_choices_for_deck(project_name: str | None) -> List[str]:
+    if not project_name or not _deck_path(project_name).exists():
+        return []
+    deck = load_cue_deck(_deck_path(project_name))
+    out = []
+    for idx, c in enumerate(deck.cues, 1):
+        badge = "🔊" if (c.audio_path and Path(c.audio_path).exists()) else "⬜"
+        out.append(f"{idx:02d}. {c.cue_id} | {badge} | {c.speaker_id} | {c.source}")
+    return out
+
+
+def _parse_cue_id_from_label(label: str | None) -> str:
+    if not label:
+        return ""
+    parts = label.split("|")
+    if not parts:
+        return ""
+    first = parts[0].strip()
+    return first.split(" ", 1)[1].strip() if " " in first else first
+
+
+def cue_load_deck_action(project_name: str | None):
+    if not project_name or not _deck_path(project_name).exists():
+        return (
+            gr.Dropdown(choices=[], value=None),
+            live_controller.render_teleprompter_markdown(),
+            "No deck found.",
+        )
+    deck = load_cue_deck(_deck_path(project_name))
+    live_controller.load_deck(deck)
+    choices = _cue_choices_for_deck(project_name)
+    return (
+        gr.Dropdown(choices=choices, value=choices[0] if choices else None),
+        live_controller.render_teleprompter_markdown(),
+        f"Loaded `{project_name}` ({len(deck.cues)} cues).",
+    )
+
+
+def cue_import_files(project_name: str, pdf_file, ipynb_file, merge_fragments: bool):
+    name = "".join(ch if ch.isalnum() or ch in ("_", "-") else "_" for ch in (project_name or "").strip())
+    if not name:
+        name = "my_presentation"
+    pdf_p = Path(pdf_file) if pdf_file else None
+    nb_p = Path(ipynb_file) if ipynb_file else None
+    if not pdf_p and not nb_p:
+        return gr.Dropdown(choices=cue_list_decks()), gr.Dropdown(), live_controller.render_teleprompter_markdown(), "Upload at least a Reading Copy PDF or Presenter .ipynb file."
+    deck, _ = build_presentation_deck(
+        project_name=name,
+        pdf_path=pdf_p,
+        ipynb_path=nb_p,
+        presentations_root=PRESENTATIONS_DIR,
+        merge_fragments=merge_fragments,
+    )
+    live_controller.load_deck(deck)
+    decks = cue_list_decks()
+    choices = _cue_choices_for_deck(name)
+    return (
+        gr.Dropdown(choices=decks, value=name),
+        gr.Dropdown(choices=choices, value=choices[0] if choices else None),
+        live_controller.render_teleprompter_markdown(),
+        f"Imported `{name}` with {len(deck.cues)} cues!",
+    )
+
+
+def cue_select_for_edit(project_name: str | None, cue_label: str | None):
+    if not project_name or not cue_label or not _deck_path(project_name).exists():
+        return "vn_01", "", "", "", None
+    cid = _parse_cue_id_from_label(cue_label)
+    deck = load_cue_deck(_deck_path(project_name))
+    for c in deck.cues:
+        if c.cue_id == cid:
+            wav = c.audio_path if (c.audio_path and Path(c.audio_path).exists()) else None
+            return c.speaker_id, c.point_to, c.clean_text, c.humanized_text or "", wav
+    return "vn_01", "", "", "", None
+
+
+def cue_save_and_rerender_one(
+    project_name: str,
+    cue_label: str,
+    speaker_id: str,
+    point_to: str,
+    clean_text: str,
+    humanized_text: str,
+    speed: float,
+    quality_mode: str,
+):
+    dp = _deck_path(project_name)
+    deck = load_cue_deck(dp)
+    cid = _parse_cue_id_from_label(cue_label)
+    nfe_step = 16 if "Fast" in quality_mode else 32
+    audio_out = None
+
+    for c in deck.cues:
+        if c.cue_id == cid:
+            c.speaker_id = speaker_id.strip()
+            c.point_to = point_to.strip()
+            c.clean_text = clean_text.strip()
+            c.humanized_text = humanized_text.strip() or None
+            # Re-render this single cue immediately
+            target_wav = dp.parent / "audio" / f"{c.cue_id}.wav"
+            target_wav.parent.mkdir(parents=True, exist_ok=True)
+            req = SynthesizeRequest(
+                speaker_id=c.speaker_id,
+                humanized_script=c.humanized_text or c.clean_text,
+                speed=speed,
+                nfe_step=nfe_step,
+            )
+            tmp_wav, _ = synthesizer.synthesize(req)
+            import soundfile as sf
+
+            data, sr = sf.read(str(tmp_wav))
+            sf.write(str(target_wav), data, sr, subtype="PCM_16")
+            c.audio_path = str(target_wav)
+            c.duration_sec = round(len(data) / float(sr), 2)
+            audio_out = str(target_wav)
+            break
+
+    save_cue_deck(deck, dp)
+    live_controller.load_deck(deck)
+    choices = _cue_choices_for_deck(project_name)
+    return (
+        gr.Dropdown(choices=choices),
+        audio_out,
+        live_controller.render_teleprompter_markdown(),
+        f"Saved & re-rendered cue `{cid}`!",
+    )
+
+
+def cue_humanize_all_action(
+    project_name: str, filler_level: str, include_self_repairs: bool, llm_model: str
+):
+    dp = _deck_path(project_name)
+    deck = load_cue_deck(dp)
+    deck = humanize_cue_deck(
+        deck,
+        dp,
+        filler_level=filler_level.lower(),
+        include_self_repairs=include_self_repairs,
+        profiles_root=PROFILES_DIR,
+        llm_model=llm_model.strip() or None,
+    )
+    live_controller.load_deck(deck)
+    return (
+        live_controller.render_teleprompter_markdown(),
+        f"Stage 1 humanized all {len(deck.cues)} cues in `{project_name}`!",
+    )
+
+
+def cue_prerender_all_action(
+    project_name: str, speed: float, quality_mode: str, only_missing: bool
+):
+    dp = _deck_path(project_name)
+    deck = load_cue_deck(dp)
+    nfe_step = 16 if "Fast" in quality_mode else 32
+    deck = prerender_cue_deck(
+        deck,
+        dp,
+        synthesizer=synthesizer,
+        speed=speed,
+        nfe_step=nfe_step,
+        only_missing=only_missing,
+    )
+    live_controller.load_deck(deck)
+    total_sec = sum(c.duration_sec for c in deck.cues)
+    choices = _cue_choices_for_deck(project_name)
+    return (
+        gr.Dropdown(choices=choices),
+        live_controller.render_teleprompter_markdown(),
+        f"Pre-rendered all {len(deck.cues)} cues ({total_sec / 60:.1f} min total audio) — ready for 0ms live OBS recording!",
+    )
+
+
 def build_ui() -> gr.Blocks:
     speakers = discover_speakers()
     speaker_names = list(speakers.keys())
@@ -703,6 +898,169 @@ def build_ui() -> gr.Blocks:
                     fn=pron_save_raw_json,
                     inputs=pron_json_box,
                     outputs=pron_status,
+                )
+
+            # --- TAB 4: LIVE CUE PRESENTER (OBS STUDIO) ---
+            with gr.Tab("Cue Presenter (Live OBS)"):
+                gr.Markdown(
+                    "### Human-Driven Live Cue Soundboard (`ADR-006`)\n"
+                    "You smoothly move the mouse, scroll, and switch between your clean **Report PDF** & **Jupyter Notebook** in OBS. "
+                    "Press **`F9`** (or optional **Mouse Side Button**) whenever your cursor reaches the target to play the pre-rendered AI voice with **0ms latency**!"
+                )
+
+                init_decks = cue_list_decks()
+                init_deck = init_decks[0] if init_decks else None
+                if init_deck and live_controller.deck is None:
+                    live_controller.load_deck(load_cue_deck(_deck_path(init_deck)))
+                init_cue_choices = _cue_choices_for_deck(init_deck)
+
+                with gr.Row():
+                    cue_deck_dd = gr.Dropdown(
+                        choices=init_decks,
+                        value=init_deck,
+                        label="Active Presentation Deck",
+                    )
+                    cue_load_btn = gr.Button("Load / Refresh Deck")
+                    cue_mouse_chk = gr.Checkbox(
+                        value=False,
+                        label="Also trigger with Mouse Side Buttons (Forward=Play, Back=Replay)",
+                    )
+                    cue_arm_btn = gr.Button("🟢 ARM GLOBAL HOTKEYS (F9/F8/F10)", variant="primary")
+                    cue_disarm_btn = gr.Button("⚪ Disarm Hotkeys")
+
+                teleprompter_md = gr.Markdown(live_controller.render_teleprompter_markdown())
+
+                with gr.Row():
+                    btn_prev = gr.Button("⏮ Prev (F7)")
+                    btn_play = gr.Button("▶ Play Current & Next (F9)", variant="primary")
+                    btn_replay = gr.Button("🔁 Replay Last (F8)")
+                    btn_stop = gr.Button("⏹ Stop (F10)")
+                    btn_next = gr.Button("⏭ Skip Next (F11)")
+                    btn_reset = gr.Button("↺ Reset to #1")
+
+                cue_action_status = gr.Textbox(label="Presenter Status", interactive=False)
+
+                # Live 0.5s timer keeps teleprompter synced when user presses F9 while focused on PDF/Jupyter
+                live_timer = gr.Timer(0.5)
+                live_timer.tick(fn=live_controller.render_teleprompter_markdown, outputs=teleprompter_md)
+
+                with gr.Accordion("Prepare Deck: Batch Humanize & Pre-Render All Audio", open=False):
+                    with gr.Row():
+                        cue_filler_radio = gr.Radio(
+                            choices=["None", "Low", "Medium", "High"],
+                            value="Medium",
+                            label="Cue Filler Level",
+                        )
+                        cue_repair_chk = gr.Checkbox(value=False, label="Include subtle self-repairs")
+                        cue_llm_box = gr.Textbox(value="gemma3:4b", label="Stage 1 Model")
+                        cue_speed_slider = gr.Slider(0.80, 1.15, value=0.90, step=0.05, label="Speed")
+                        cue_qual_radio = gr.Radio(
+                            choices=["Fast Preview (16 steps)", "High Quality (32 steps)"],
+                            value="Fast Preview (16 steps)",
+                            label="Quality",
+                        )
+                        cue_only_missing_chk = gr.Checkbox(value=True, label="Only render missing WAVs")
+                    with gr.Row():
+                        cue_humanize_all_btn = gr.Button("1. Humanize All Cues (Gemma 3 4B)")
+                        cue_prerender_all_btn = gr.Button(
+                            "2. Pre-Render All Cue WAVs (F5-TTS)", variant="primary"
+                        )
+
+                with gr.Accordion("Inspect / Edit Individual Cue & Re-Render", open=False):
+                    cue_item_dd = gr.Dropdown(
+                        choices=init_cue_choices,
+                        value=init_cue_choices[0] if init_cue_choices else None,
+                        label="Select Cue",
+                    )
+                    with gr.Row():
+                        cue_edit_spk = gr.Textbox(label="Speaker ID (e.g., vn_01 or vn_02)")
+                        cue_edit_point = gr.Textbox(label="POINT TO (Visual Cursor Instruction)")
+                    cue_edit_clean = gr.Textbox(label="Original SAY (Clean)", lines=2)
+                    cue_edit_hum = gr.Textbox(label="Humanized Spoken Script (TTS Input)", lines=2)
+                    cue_edit_audio = gr.Audio(label="Pre-Rendered Cue Audio", type="filepath")
+                    cue_save_one_btn = gr.Button("Save & Re-Render This Cue", variant="primary")
+
+                with gr.Accordion("Import New Presentation (Reading Copy PDF + Presenter .ipynb)", open=False):
+                    with gr.Row():
+                        imp_name = gr.Textbox(label="Project Name", placeholder="e.g., lab3_presentation")
+                        imp_merge = gr.Checkbox(value=True, label="Merge sentence fragments (e.g., N5a+N5b+N5c)")
+                    with gr.Row():
+                        imp_pdf = gr.File(label="Reading Copy PDF (.pdf)", file_types=[".pdf"], type="filepath")
+                        imp_nb = gr.File(label="Presenter Notebook (.ipynb)", file_types=[".ipynb"], type="filepath")
+                    imp_btn = gr.Button("Import & Parse Presentation Cues", variant="primary")
+
+                # Wire Tab 4 callbacks
+                cue_load_btn.click(
+                    fn=cue_load_deck_action,
+                    inputs=cue_deck_dd,
+                    outputs=[cue_item_dd, teleprompter_md, cue_action_status],
+                )
+                cue_arm_btn.click(
+                    fn=lambda m: (live_controller.start_listeners(m), live_controller.render_teleprompter_markdown()),
+                    inputs=cue_mouse_chk,
+                    outputs=[cue_action_status, teleprompter_md],
+                )
+                cue_disarm_btn.click(
+                    fn=lambda: (live_controller.stop_listeners(), live_controller.render_teleprompter_markdown()),
+                    outputs=[cue_action_status, teleprompter_md],
+                )
+                btn_play.click(
+                    fn=lambda: (live_controller.play_current_and_advance(), live_controller.render_teleprompter_markdown()),
+                    outputs=[cue_action_status, teleprompter_md],
+                )
+                btn_replay.click(
+                    fn=lambda: (live_controller.replay_last(), live_controller.render_teleprompter_markdown()),
+                    outputs=[cue_action_status, teleprompter_md],
+                )
+                btn_stop.click(
+                    fn=lambda: (live_controller.stop_audio(), live_controller.render_teleprompter_markdown()),
+                    outputs=[cue_action_status, teleprompter_md],
+                )
+                btn_prev.click(
+                    fn=lambda: (live_controller.step_index(-1), live_controller.render_teleprompter_markdown()),
+                    outputs=[cue_action_status, teleprompter_md],
+                )
+                btn_next.click(
+                    fn=lambda: (live_controller.step_index(1), live_controller.render_teleprompter_markdown()),
+                    outputs=[cue_action_status, teleprompter_md],
+                )
+                btn_reset.click(
+                    fn=lambda: (setattr(live_controller, "current_idx", 0) or "Reset to Cue #1", live_controller.render_teleprompter_markdown()),
+                    outputs=[cue_action_status, teleprompter_md],
+                )
+                cue_humanize_all_btn.click(
+                    fn=cue_humanize_all_action,
+                    inputs=[cue_deck_dd, cue_filler_radio, cue_repair_chk, cue_llm_box],
+                    outputs=[teleprompter_md, cue_action_status],
+                )
+                cue_prerender_all_btn.click(
+                    fn=cue_prerender_all_action,
+                    inputs=[cue_deck_dd, cue_speed_slider, cue_qual_radio, cue_only_missing_chk],
+                    outputs=[cue_item_dd, teleprompter_md, cue_action_status],
+                )
+                cue_item_dd.change(
+                    fn=cue_select_for_edit,
+                    inputs=[cue_deck_dd, cue_item_dd],
+                    outputs=[cue_edit_spk, cue_edit_point, cue_edit_clean, cue_edit_hum, cue_edit_audio],
+                )
+                cue_save_one_btn.click(
+                    fn=cue_save_and_rerender_one,
+                    inputs=[
+                        cue_deck_dd,
+                        cue_item_dd,
+                        cue_edit_spk,
+                        cue_edit_point,
+                        cue_edit_clean,
+                        cue_edit_hum,
+                        cue_speed_slider,
+                        cue_qual_radio,
+                    ],
+                    outputs=[cue_item_dd, cue_edit_audio, teleprompter_md, cue_action_status],
+                )
+                imp_btn.click(
+                    fn=cue_import_files,
+                    inputs=[imp_name, imp_pdf, imp_nb, imp_merge],
+                    outputs=[cue_deck_dd, cue_item_dd, teleprompter_md, cue_action_status],
                 )
 
     return demo

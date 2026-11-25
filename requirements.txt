@@ -22,8 +22,10 @@ openai>=1.50.0
 # Stage 2: Voice Synthesis (F5-TTS)
 f5-tts>=1.1.0
 
-# Web UI (Phase 1 Local App)
+# Web UI & Live Cue Presenter (Phase 1/2 Local App)
 gradio>=4.44.0
+pynput>=1.7.7
+pypdf>=5.0.0
 
 # NOTE for NVIDIA RTX 5060 Laptop (Blackwell sm_120):
 # Install PyTorch separately with CUDA 12.8+ BEFORE installing requirements.txt:
