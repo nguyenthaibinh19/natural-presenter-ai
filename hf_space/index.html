@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Natural Presenter AI — Portfolio Showcase</title>
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --surface: #ffffff;
+      --surface-soft: #f1f5f9;
+      --border: #e2e8f0;
+      --text: #0f172a;
+      --muted: #475569;
+      --primary: #2563eb;
+      --primary-dark: #1d4ed8;
+      --accent: #059669;
+      --accent-soft: #ecfdf5;
+      --accent-border: #a7f3d0;
+      --warn-soft: #fffbeb;
+      --warn-border: #fde68a;
+      --warn-text: #92400e;
+      --radius: 14px;
+      --shadow: 0 1px 3px rgba(15, 23, 42, 0.06), 0 4px 16px rgba(15, 23, 42, 0.04);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+
+    .container {
+      max-width: 1020px;
+      margin: 0 auto;
+      padding: 28px 20px 64px;
+    }
+
+    /* Hero Header */
+    .hero {
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 55%, #1e3a5f 100%);
+      color: #f8fafc;
+      border-radius: 18px;
+      padding: 32px 32px 28px;
+      box-shadow: 0 10px 30px rgba(15, 23, 42, 0.14);
+      margin-bottom: 24px;
+    }
+
+    .hero-top {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+    }
+
+    .hero h1 {
+      margin: 0 0 8px;
+      font-size: 1.9rem;
+      letter-spacing: -0.02em;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .hero .subtitle {
+      margin: 0;
+      color: #cbd5e1;
+      font-size: 1.02rem;
+      max-width: 720px;
+    }
+
+    .badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 18px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 11px;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      background: rgba(255, 255, 255, 0.12);
+      color: #f1f5f9;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+    }
+
+    .badge.highlight {
+      background: rgba(16, 185, 129, 0.2);
+      border-color: rgba(52, 211, 153, 0.45);
+      color: #a7f3d0;
+    }
+
+    .hero-links {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .hero-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 9px 15px;
+      border-radius: 10px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      text-decoration: none;
+      background: #ffffff;
+      color: #0f172a;
+      transition: transform 0.12s ease, opacity 0.12s ease;
+    }
+
+    .hero-btn:hover { transform: translateY(-1px); opacity: 0.94; }
+
+    /* Tabs */
+    .tabs {
+      display: flex;
+      gap: 8px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 22px;
+      flex-wrap: wrap;
+    }
+
+    .tab-btn {
+      appearance: none;
+      border: 1px solid transparent;
+      border-bottom: none;
+      background: transparent;
+      color: var(--muted);
+      font-size: 0.95rem;
+      font-weight: 600;
+      padding: 11px 18px;
+      border-radius: 10px 10px 0 0;
+      cursor: pointer;
+      transition: background 0.15s ease, color 0.15s ease;
+    }
+
+    .tab-btn:hover { background: var(--surface-soft); color: var(--text); }
+
+    .tab-btn.active {
+      background: var(--surface);
+      color: var(--primary);
+      border-color: var(--border);
+      position: relative;
+      top: 1px;
+    }
+
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* Consent Notice */
+    .notice {
+      background: var(--accent-soft);
+      border: 1px solid var(--accent-border);
+      color: #065f46;
+      padding: 12px 16px;
+      border-radius: 12px;
+      font-size: 0.9rem;
+      margin-bottom: 20px;
+    }
+
+    /* Section Headings */
+    .section-title {
+      font-size: 1.12rem;
+      font-weight: 700;
+      margin: 22px 0 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--text);
+    }
+
+    .section-title:first-child { margin-top: 0; }
+
+    /* Audio Grid */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(310px, 1fr));
+      gap: 16px;
+      margin-bottom: 12px;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px 20px;
+      box-shadow: var(--shadow);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .card.featured {
+      border-color: #6ee7b7;
+      background: linear-gradient(180deg, #ffffff 0%, #f4fdf9 100%);
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .card-title {
+      font-weight: 700;
+      font-size: 0.98rem;
+      margin: 0;
+    }
+
+    .pill {
+      font-size: 0.74rem;
+      font-weight: 700;
+      padding: 3px 9px;
+      border-radius: 999px;
+      background: var(--surface-soft);
+      color: var(--muted);
+    }
+
+    .pill.green {
+      background: var(--accent-soft);
+      color: #047857;
+      border: 1px solid var(--accent-border);
+    }
+
+    .pill.amber {
+      background: var(--warn-soft);
+      color: var(--warn-text);
+      border: 1px solid var(--warn-border);
+    }
+
+    .card-desc {
+      margin: 0;
+      font-size: 0.87rem;
+      color: var(--muted);
+    }
+
+    .transcript {
+      font-size: 0.84rem;
+      background: var(--surface-soft);
+      border-radius: 9px;
+      padding: 10px 12px;
+      color: #334155;
+      border-left: 3px solid #cbd5e1;
+    }
+
+    .card.featured .transcript {
+      border-left-color: var(--accent);
+    }
+
+    audio {
+      width: 100%;
+      height: 40px;
+      margin-top: auto;
+    }
+
+    /* Playground */
+    .controls {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 14px;
+      margin-bottom: 16px;
+    }
+
+    label.field-label {
+      display: block;
+      font-size: 0.84rem;
+      font-weight: 700;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    select, textarea {
+      width: 100%;
+      font-family: inherit;
+      font-size: 0.93rem;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 12px;
+      background: var(--surface);
+      color: var(--text);
+    }
+
+    textarea {
+      min-height: 120px;
+      resize: vertical;
+      line-height: 1.55;
+    }
+
+    .checkbox-wrap {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding-top: 28px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .primary-btn {
+      appearance: none;
+      border: none;
+      background: var(--primary);
+      color: #ffffff;
+      font-weight: 700;
+      font-size: 0.94rem;
+      padding: 11px 20px;
+      border-radius: 10px;
+      cursor: pointer;
+      margin: 12px 0 16px;
+      transition: background 0.15s ease;
+    }
+
+    .primary-btn:hover { background: var(--primary-dark); }
+
+    .output-box {
+      background: #0f172a;
+      color: #f8fafc;
+      border-radius: 12px;
+      padding: 16px 18px;
+      font-size: 0.95rem;
+      white-space: pre-wrap;
+      line-height: 1.65;
+    }
+
+    .tok-filler {
+      background: rgba(251, 191, 36, 0.22);
+      color: #fde68a;
+      padding: 1px 5px;
+      border-radius: 5px;
+      font-weight: 600;
+    }
+
+    .tok-acronym {
+      background: rgba(52, 211, 153, 0.2);
+      color: #6ee7b7;
+      padding: 1px 5px;
+      border-radius: 5px;
+      font-weight: 600;
+    }
+
+    /* Architecture Flow */
+    .pipeline {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 12px;
+      margin: 14px 0 24px;
+    }
+
+    .stage {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 15px 16px;
+      box-shadow: var(--shadow);
+    }
+
+    .stage-num {
+      font-size: 0.74rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--primary);
+      margin-bottom: 4px;
+    }
+
+    .stage h4 { margin: 0 0 6px; font-size: 0.96rem; }
+    .stage p { margin: 0; font-size: 0.84rem; color: var(--muted); }
+
+    /* Table */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--surface);
+      border-radius: var(--radius);
+      overflow: hidden;
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border);
+      font-size: 0.9rem;
+    }
+
+    th, td {
+      text-align: left;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: top;
+    }
+
+    th {
+      background: var(--surface-soft);
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    tr:last-child td { border-bottom: none; }
+
+    .footer {
+      margin-top: 32px;
+      text-align: center;
+      font-size: 0.84rem;
+      color: var(--muted);
+    }
+
+    @media (max-width: 640px) {
+      .hero { padding: 22px 20px; }
+      .hero h1 { font-size: 1.5rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header class="hero">
+      <div class="hero-top">
+        <div>
+          <h1>🎙️ Natural Presenter AI</h1>
+          <p class="subtitle">
+            A <strong>100% local, privacy-first, accent-preserving AI voice presentation studio</strong>.
+            Preserves authentic non-native English accents, personal speaking cadence, and individualized hesitation patterns — paired with a 0 ms human-driven OBS Cue Soundboard.
+          </p>
+        </div>
+        <div class="hero-links">
+          <a class="hero-btn" href="https://github.com/nguyenthaibinh19/natural-presenter-ai" target="_blank" rel="noopener">
+            GitHub Repository ↗
+          </a>
+        </div>
+      </div>
+      <div class="badges">
+        <span class="badge highlight">FT-001 Fine-Tuned: 9.5–10/10</span>
+        <span class="badge">F5-TTS Flow Matching (G2P-Free)</span>
+        <span class="badge">Pruned EMA FP16: 643 MB</span>
+        <span class="badge">Local RTX 5060: Faster Than Real Time</span>
+        <span class="badge">Ollama Gemma 3 4B ($0 API)</span>
+        <span class="badge">MIT License</span>
+      </div>
+    </header>
+
+    <nav class="tabs" role="tablist">
+      <button class="tab-btn active" data-tab="audio" role="tab">1. Audio Benchmarks (Listen)</button>
+      <button class="tab-btn" data-tab="playground" role="tab">2. Live Stage 1 Playground</button>
+      <button class="tab-btn" data-tab="metrics" role="tab">3. Architecture &amp; Metrics</button>
+    </nav>
+
+    <!-- TAB 1: AUDIO BENCHMARKS -->
+    <section id="tab-audio" class="tab-panel active">
+      <div class="notice">
+        <strong>Responsible AI &amp; Voice Consent:</strong> All 6 audio benchmarks below were generated locally on an RTX 5060 Laptop GPU (<code>nfe_step=32</code>) using exclusively the consenting author's self-recorded voice (<code>vn_01</code>, Vietnamese-English). No personal datasets or trained voice checkpoints are distributed publicly.
+      </div>
+
+      <h2 class="section-title">A/B Listening Test — Zero-Shot vs. Fine-Tuned (<code>FT-001</code>)</h2>
+      <div class="grid-2">
+        <article class="card">
+          <div class="card-header">
+            <h3 class="card-title">A. Zero-Shot Baseline (F5-TTS Base)</h3>
+            <span class="pill amber">10s Ref Only · 7–8/10</span>
+          </div>
+          <p class="card-desc">Pretrained <code>F5TTS_v1_Base</code> using only a 10-second reference clip without speaker fine-tuning.</p>
+          <div class="transcript">
+            "Hello everyone, today I want to, uh, walk you through our convolutional autoencoder results. Replacing max pooling with, like, stride-two convolutions reduced test M S E by twenty-five percent across all three seeds."
+          </div>
+          <audio controls preload="metadata" src="samples/01_zeroshot_baseline.wav"></audio>
+        </article>
+
+        <article class="card featured">
+          <div class="card-header">
+            <h3 class="card-title">B. Fine-Tuned FT-001 (643 MB FP16)</h3>
+            <span class="pill green">4,020 Updates · 9.5–10/10</span>
+          </div>
+          <p class="card-desc">Fine-tuned on 173 verified clips (26.65 min, 60 epochs, loss <code>0.408</code>) and pruned 5.2× to EMA FP16 <code>safetensors</code>.</p>
+          <div class="transcript">
+            "Hello everyone, today I want to, uh, walk you through our convolutional autoencoder results. Replacing max pooling with, like, stride-two convolutions reduced test M S E by twenty-five percent across all three seeds."
+          </div>
+          <audio controls preload="metadata" src="samples/02_finetuned_ft001.wav"></audio>
+        </article>
+      </div>
+
+      <h2 class="section-title">Individualized Hesitation &amp; Reference Style Control</h2>
+      <div class="grid-2">
+        <article class="card">
+          <div class="card-header">
+            <h3 class="card-title">C. Filler Level: NONE + Clear Studio Ref</h3>
+            <span class="pill">partB_studio_clear_ref</span>
+          </div>
+          <p class="card-desc">Formal, polished delivery driven by a scripted studio reference clip (34.7–38.0 dB SNR).</p>
+          <div class="transcript">
+            "Hello everyone, today I want to walk you through our convolutional autoencoder results. Replacing max pooling with stride-two convolutions reduced test MSE by twenty-five percent across all three seeds."
+          </div>
+          <audio controls preload="metadata" src="samples/03_filler_none.wav"></audio>
+        </article>
+
+        <article class="card">
+          <div class="card-header">
+            <h3 class="card-title">D. Filler Level: MEDIUM + Natural Ref</h3>
+            <span class="pill green">partA_natural_slow_ref</span>
+          </div>
+          <p class="card-desc">Matches speaker's measured <code>style_profile.json</code> rhythm (<code>102.7 WPM</code>, <code>uh 78%</code>, <code>like 13%</code>).</p>
+          <div class="transcript">
+            "Hello everyone, today I want to, uh, walk you through our convolutional autoencoder results. Replacing max pooling with, like, stride-two convolutions reduced test M S E by twenty-five percent across all three seeds."
+          </div>
+          <audio controls preload="metadata" src="samples/04_filler_medium_natural.wav"></audio>
+        </article>
+      </div>
+
+      <h2 class="section-title">Technical Pronunciation Lexicon &amp; Slide-Transition Pacing</h2>
+      <div class="grid-2">
+        <article class="card">
+          <div class="card-header">
+            <h3 class="card-title">E. Acronym Pronunciation Fix</h3>
+            <span class="pill">pronunciation_map.json</span>
+          </div>
+          <p class="card-desc">Dual-stage lexicon expands <code>GPU</code>, <code>CNN</code>, <code>ReLU</code>, <code>MSE</code>, and <code>FP16</code> cleanly for G2P-free synthesis.</p>
+          <div class="transcript">
+            "On a single G P U, our C N N autoencoder uses ray-loo activations and reached a test M S E of 0.0023 in F P sixteen."
+          </div>
+          <audio controls preload="metadata" src="samples/05_acronym_mse_fixed.wav"></audio>
+        </article>
+
+        <article class="card">
+          <div class="card-header">
+            <h3 class="card-title">F. Slide Pause (750 ms) + Subtle Self-Repair</h3>
+            <span class="pill">Long-Form Stitching</span>
+          </div>
+          <p class="card-desc">Multi-paragraph synthesis with natural 750 ms slide-change pause and subtle human self-repair (<code>we, we pruned...</code>).</p>
+          <div class="transcript">
+            "So, uh, looking at the model compression step, our raw training checkpoint was three point three eight gigabytes." [750 ms pause] "However, after stripping the optimizer state, we, we pruned the F P sixteen weights down to six hundred forty-three megabytes for local G P U inference."
+          </div>
+          <audio controls preload="metadata" src="samples/06_self_repair_and_slide_pause.wav"></audio>
+        </article>
+      </div>
+    </section>
+
+    <!-- TAB 2: LIVE PLAYGROUND -->
+    <section id="tab-playground" class="tab-panel">
+      <div class="card">
+        <h2 class="section-title" style="margin-top:0;">Interactive Stage 1 — Script Humanizer &amp; Acronym Normalizer</h2>
+        <p class="card-desc">
+          Test how the same polished presentation script adapts differently to each speaker's measured <code>style_profile.json</code> while normalizing technical terms for G2P-free TTS. Runs instantly in your browser (production Stage 1 uses local <strong>Ollama Gemma 3 4B</strong>).
+        </p>
+
+        <div class="controls">
+          <div>
+            <label class="field-label" for="speakerSelect">Speaker Style Profile</label>
+            <select id="speakerSelect">
+              <option value="vn_01">Speaker 1 — Vietnamese English (102.7 WPM · uh 78%, like 13%, um 4%)</option>
+              <option value="vn_02">Speaker 2 — Turkish English (146.6 WPM · uh 79%, eh 12%, um 9%)</option>
+            </select>
+          </div>
+          <div>
+            <label class="field-label" for="levelSelect">Hesitation Intensity</label>
+            <select id="levelSelect">
+              <option value="none">None (Formal Polished)</option>
+              <option value="low">Low (Subtle)</option>
+              <option value="medium" selected>Medium (Natural Presentation)</option>
+              <option value="high">High (Spontaneous)</option>
+            </select>
+          </div>
+          <label class="checkbox-wrap">
+            <input type="checkbox" id="repairCheck" checked />
+            Include subtle self-repair / repetition
+          </label>
+        </div>
+
+        <label class="field-label" for="scriptInput">Clean Presentation Script</label>
+        <textarea id="scriptInput">Hello everyone, today I want to walk you through our CNN autoencoder results on a single GPU. After switching to ReLU activations, test MSE dropped by 24% in Q3.
+
+However, latency increased slightly, so we pruned the FP16 weights from 3.38 GB down to 643 MB for local CUDA inference.</textarea>
+
+        <div>
+          <button class="primary-btn" id="runBtn">Humanize &amp; Normalize Acronyms</button>
+        </div>
+
+        <label class="field-label">TTS-Ready Spoken Script (Highlighted: <span style="color:#b45309;">fillers/repairs</span> &amp; <span style="color:#047857;">normalized technical terms</span>)</label>
+        <div id="scriptOutput" class="output-box"></div>
+      </div>
+    </section>
+
+    <!-- TAB 3: ARCHITECTURE & METRICS -->
+    <section id="tab-metrics" class="tab-panel">
+      <h2 class="section-title">End-to-End Local System Architecture</h2>
+      <div class="pipeline">
+        <div class="stage">
+          <div class="stage-num">Layer 0 · Data &amp; QA</div>
+          <h4>Curated 60/40 Speech Dataset</h4>
+          <p>Silero VAD slicing + disfluency-preserving <code>faster-whisper</code> + Gradio QA Reviewer → <code>style_profile.json</code> &amp; fine-tuned FP16 weights.</p>
+        </div>
+        <div class="stage">
+          <div class="stage-num">Stage 1 · Script Humanizer</div>
+          <h4>Local Ollama (Gemma 3 4B)</h4>
+          <p>Injects speaker-specific fillers, subtle self-repairs, and expands acronyms via <code>pronunciation_map.json</code> before human review.</p>
+        </div>
+        <div class="stage">
+          <div class="stage-num">Stage 2 · Accent-Preserving TTS</div>
+          <h4>F5-TTS Flow Matching</h4>
+          <p>G2P-free synthesis with per-speaker checkpoints + selectable Reference Styles on a local 8 GB laptop GPU (faster than real time).</p>
+        </div>
+        <div class="stage">
+          <div class="stage-num">Stage 3 · Live OBS Presenter</div>
+          <h4>0 ms Win32 Hotkey Soundboard</h4>
+          <p>Human drives cursor/scrolling on clean PDF &amp; Jupyter deliverables while triggering pre-rendered cues via <code>F9</code> / <code>Alt+Space</code>.</p>
+        </div>
+      </div>
+
+      <h2 class="section-title">Verified Engineering Results &amp; Benchmarks</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Milestone</th>
+            <th>Engineering Detail</th>
+            <th>Verified Outcome</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Data Curation &amp; QA</strong></td>
+            <td>Balanced 51.5% Spontaneous Part A + 48.5% Scripted Part B; iPhone 16 Lossless ALAC (34.7–42.6 dB SNR), Silero VAD, verbatim Gradio QA Reviewer</td>
+            <td><strong>173 verified clips (26.65 min)</strong>, 0 integrity errors</td>
+          </tr>
+          <tr>
+            <td><strong>Accent-Preserving TTS (<code>FT-001</code>)</strong></td>
+            <td>Fine-tuned <code>F5TTS_v1_Base</code> with pretrained 2,545-token vocab (<code>lr=1e-5</code>, <code>warmup=100</code>, <code>fp16</code> + 8-bit AdamW) on single Tesla T4</td>
+            <td>60 epochs / 4,020 updates, final loss <strong>0.408</strong>, rated <strong>9.5–10/10</strong></td>
+          </tr>
+          <tr>
+            <td><strong>Model Compression</strong></td>
+            <td>Pruned raw training checkpoint (<code>model_4000.pt</code>) to EMA FP16 <code>safetensors</code></td>
+            <td><strong>3.38 GB → 643 MB (5.2× smaller)</strong></td>
+          </tr>
+          <tr>
+            <td><strong>Local Edge Inference</strong></td>
+            <td>Single-pass batching + 16-step Fast Preview + Local Ollama <code>gemma3:4b</code> on RTX 5060 Laptop (8 GB VRAM)</td>
+            <td><strong>5.3s for 6.5s audio</strong> (faster than real time, $0 API cost)</td>
+          </tr>
+          <tr>
+            <td><strong>Live OBS Cue Presenter</strong></td>
+            <td>Native Win32 <code>GetAsyncKeyState</code> global hotkeys + pre-rendered cue WAVs + synced <code>NOW SPEAKING</code> teleprompter</td>
+            <td><strong>0 ms trigger latency</strong> across clean PDF, Jupyter, and OBS</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <footer class="footer">
+      Built by <strong>Thai Binh Nguyen</strong> &amp; <strong>Ege Deniz</strong> · 100% Local-First &amp; Privacy-Respecting · MIT License
+    </footer>
+  </div>
+
+  <script>
+    // Tab switching
+    const tabBtns = document.querySelectorAll('.tab-btn');
+    const tabPanels = document.querySelectorAll('.tab-panel');
+    tabBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const target = btn.dataset.tab;
+        tabBtns.forEach(b => b.classList.toggle('active', b === btn));
+        tabPanels.forEach(p => p.classList.toggle('active', p.id === `tab-${target}`));
+      });
+    });
+
+    // Stage 1 client-side demo
+    const PRONUNCIATION_MAP = {
+      RMSE: "R M S E", MSE: "M S E", MAE: "M A E", CNN: "C N N", RNN: "R N N",
+      LSTM: "L S T M", LLM: "L L M", NLP: "N L P", TTS: "T T S", ASR: "A S R",
+      GPU: "G P U", CPU: "C P U", VRAM: "V-ram", API: "A P I", SQL: "S Q L",
+      PCA: "P C A", ReLU: "ray-loo", CUDA: "kooda", LoRA: "low-rah",
+      FP16: "F P sixteen", BF16: "B F sixteen", Q3: "Q three"
+    };
+
+    const PROFILES = {
+      vn_01: { fillers: [["uh", 0.78], ["like", 0.13], ["um", 0.05], ["actually", 0.04]] },
+      vn_02: { fillers: [["uh", 0.79], ["eh", 0.12], ["um", 0.09]] }
+    };
+
+    const TARGETS = { none: 0, low: 2, medium: 5, high: 9 };
+    const TRANSITIONS = new Set(["and", "but", "so", "however,", "after", "when", "if", "because"]);
+
+    function seededRand(seed) {
+      let s = seed % 2147483647;
+      if (s <= 0) s += 2147483646;
+      return () => {
+        s = (s * 16807) % 2147483647;
+        return (s - 1) / 2147483646;
+      };
+    }
+
+    function pickWeighted(items, rand) {
+      const r = rand();
+      let acc = 0;
+      for (const [val, w] of items) {
+        acc += w;
+        if (r <= acc) return val;
+      }
+      return items[0][0];
+    }
+
+    function escapeHtml(s) {
+      return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    }
+
+    function applyPronunciation(text) {
+      let out = escapeHtml(text);
+      const terms = Object.keys(PRONUNCIATION_MAP).sort((a, b) => b.length - a.length);
+      for (const term of terms) {
+        const re = new RegExp(`(?<![A-Za-z0-9])${term}(?![A-Za-z0-9])`, "g");
+        out = out.replace(re, `<span class="tok-acronym">${PRONUNCIATION_MAP[term]}</span>`);
+      }
+      out = out.replace(/(\d+)\s*%/g, `<span class="tok-acronym">$1 percent</span>`);
+      return out;
+    }
+
+    function runPlayground() {
+      const spk = document.getElementById('speakerSelect').value;
+      const lvl = document.getElementById('levelSelect').value;
+      const repairs = document.getElementById('repairCheck').checked;
+      const raw = document.getElementById('scriptInput').value.trim();
+
+      if (!raw) {
+        document.getElementById('scriptOutput').innerHTML = "";
+        return;
+      }
+
+      const paragraphs = raw.split(/\n\s*\n/).map(p => p.trim()).filter(Boolean);
+      const prof = PROFILES[spk];
+      const targetPer100 = TARGETS[lvl];
+
+      const rendered = paragraphs.map((para, pIdx) => {
+        if (lvl === "none") return applyPronunciation(para);
+
+        const words = para.split(/\s+/);
+        const desired = Math.max(1, Math.round((words.length / 100) * targetPer100));
+        const rand = seededRand(101 + pIdx * 17 + words.length + (spk === "vn_02" ? 7 : 0));
+        const sentences = para.split(/(?<=[.!?])\s+/);
+        let inserted = 0;
+        let didRepair = false;
+
+        const outSents = sentences.map((sent, sIdx) => {
+          const sw = sent.split(/\s+/);
+          if (sw.length < 5) return applyPronunciation(sent);
+
+          const outTokens = sw.map(w => applyPronunciation(w));
+
+          if (repairs && !didRepair && pIdx === paragraphs.length - 1 && sIdx === 0) {
+            for (let i = 1; i < sw.length - 2; i++) {
+              if (["we", "the", "our", "and"].includes(sw[i].toLowerCase())) {
+                outTokens.splice(i, 0, `<span class="tok-filler">${escapeHtml(sw[i])},</span>`);
+                didRepair = true;
+                break;
+              }
+            }
+          }
+
+          if (inserted < desired) {
+            const filler = pickWeighted(prof.fillers, rand);
+            let placed = false;
+            for (let i = 2; i < sw.length - 2; i++) {
+              if (sw[i].endsWith(",") || TRANSITIONS.has(sw[i].toLowerCase())) {
+                outTokens.splice(i + 1, 0, `<span class="tok-filler">${filler},</span>`);
+                placed = true;
+                inserted++;
+                break;
+              }
+            }
+            if (!placed) {
+              outTokens.splice(Math.floor(outTokens.length / 2), 0, `<span class="tok-filler">${filler},</span>`);
+              inserted++;
+            }
+          }
+          return outTokens.join(" ");
+        });
+        return outSents.join(" ");
+      });
+
+      document.getElementById('scriptOutput').innerHTML = rendered.join("\n\n");
+    }
+
+    document.getElementById('runBtn').addEventListener('click', runPlayground);
+    document.getElementById('speakerSelect').addEventListener('change', runPlayground);
+    document.getElementById('levelSelect').addEventListener('change', runPlayground);
+    document.getElementById('repairCheck').addEventListener('change', runPlayground);
+    runPlayground();
+  </script>
+</body>
+</html>

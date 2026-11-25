@@ -1,14 +1,18 @@
-"""Step 8 (Optional): One-command deploy of `hf_space/` to Hugging Face Spaces (Free CPU).
+"""Step 8 (Optional): One-command deploy of `hf_space/` to a FREE Hugging Face Static Space.
+
+Static Spaces (`sdk: static`, `index.html` + `samples/*.wav`) are 100% free forever on
+Hugging Face without requiring a PRO subscription, load instantly with zero cold start,
+and run the Stage 1 playground directly in the visitor's browser.
 
 Safety Guard:
   By default, refuses to upload any co-author audio (`06_multi_speaker_handoff.wav`)
   unless `--allow-coauthor-consent` is explicitly passed.
 
 Usage:
-    # 1. Authenticate once with a Write token from https://huggingface.co/settings/tokens
+    # 1. Authenticate once with `hf auth login`
     hf auth login
 
-    # 2. Deploy the free CPU Gradio showcase Space
+    # 2. Deploy the free Static Space showcase
     python scripts/08_deploy_hf_space.py --repo-id <your-hf-username>/natural-presenter-ai-showcase
 """
 
@@ -73,7 +77,7 @@ def main() -> None:
     api.create_repo(
         repo_id=args.repo_id,
         repo_type="space",
-        space_sdk="gradio",
+        space_sdk="static",
         private=args.private,
         exist_ok=True,
     )
@@ -82,8 +86,8 @@ def main() -> None:
         folder_path=str(HF_SPACE_DIR),
         repo_id=args.repo_id,
         repo_type="space",
-        ignore_patterns=["__pycache__/*", "*.pyc", ".DS_Store"],
-        commit_message="Deploy Natural Presenter AI portfolio showcase (self-recorded voice samples only)",
+        ignore_patterns=["__pycache__/*", "*.pyc", ".DS_Store", "app.py", "requirements.txt"],
+        commit_message="Deploy Natural Presenter AI portfolio showcase (Static Space, self-recorded voice only)",
     )
 
     print(f"\nDEPLOY_OK: https://huggingface.co/spaces/{args.repo_id}")

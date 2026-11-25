@@ -4,13 +4,14 @@
 [![PyTorch CUDA 12.8](https://img.shields.io/badge/PyTorch-CUDA%2012.8-ee4c2c.svg)](https://pytorch.org/)
 [![F5-TTS](https://img.shields.io/badge/TTS-F5--TTS%20Flow%20Matching-green.svg)](https://github.com/SWivid/F5-TTS)
 [![Ollama Gemma 3](https://img.shields.io/badge/LLM-Ollama%20Gemma%203%204B-orange.svg)](https://ollama.com/)
+[![Hugging Face Space](https://img.shields.io/badge/🤗%20Showcase-Hugging%20Face%20Spaces-yellow.svg)](https://huggingface.co/spaces/nguyenthaibinh19/natural-presenter-ai-showcase)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 **A 100% local, privacy-first, multi-accent AI voice presentation studio** built by **Thai Binh Nguyen** and **Ege Deniz**.
 
 Unlike commercial TTS APIs that flatten international speakers into generic, overly polished American/British radio voices, **Natural Presenter AI** preserves each speaker's **authentic non-native English accent** (e.g., Vietnamese, Turkish, Cypriot, Hungarian, Spanish), personal speaking pace, breaths, and **individualized hesitation patterns** (`uh`, `um`, `like`, `eh`, subtle self-repairs) — paired with a **zero-latency human-driven live OBS Cue Soundboard** for recording smooth technical demos across code and reports.
 
-> 🎥 **Demo Video & Interactive Audio Showcase:** *(Add your 60–90s demo video & Hugging Face Spaces link here once recorded — see [`hf_space/`](hf_space/) for the ready-to-deploy free CPU showcase!)*
+> 🎧 **Interactive Audio Showcase & Live Stage 1 Playground:** **[Try on Hugging Face Spaces ↗](https://huggingface.co/spaces/nguyenthaibinh19/natural-presenter-ai-showcase)** *(Free Static Space — listen to Zero-Shot vs. Fine-Tuned `FT-001` A/B benchmarks & test acronym/hesitation adaptation in browser!)*
 
 ---
 
