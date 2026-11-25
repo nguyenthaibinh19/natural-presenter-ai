@@ -21,7 +21,7 @@ from typing import Dict, List, Optional, Tuple
 import soundfile as sf
 
 from src.humanizer import humanize_script
-from src.schemas import CueDeck, CueItem, FillerLevel, HumanizeRequest, SynthesizeRequest
+from src.schemas import CueDeck, CueItem, FillerLevel, HumanizeRequest, SynthesizeRequest, load_style_profile
 from src.synthesizer import PresentationSynthesizer
 
 # Default ordering heuristic matching standard report+notebook presentation flow
@@ -229,6 +229,128 @@ def build_presentation_deck(
     all_cues.sort(key=lambda c: _cue_sort_key(c.cue_id))
     deck = CueDeck(project_name=project_name, cues=all_cues)
 
+    deck_path = presentations_root / project_name / "deck.json"
+    save_cue_deck(deck, deck_path)
+    return deck, deck_path
+
+
+def resolve_speaker_alias(raw_speaker: str, profiles_root: Path = Path("profiles")) -> str:
+    """Resolve friendly names like 'binh' or 'ege' to their exact speaker_id (e.g., 'vn_01', 'vn_02')."""
+    token = raw_speaker.strip()
+    if not token:
+        return "vn_01"
+    if (profiles_root / token / "style_profile.json").exists():
+        return token
+
+    lower = token.lower()
+    if profiles_root.exists():
+        for prof_file in sorted(profiles_root.glob("*/style_profile.json")):
+            prof = load_style_profile(prof_file)
+            if lower == prof.speaker_id.lower() or lower in prof.display_name.lower():
+                return prof.speaker_id
+    return token
+
+
+def parse_cue_script_markdown(
+    markdown_text: str,
+    profiles_root: Path = Path("profiles"),
+) -> List[CueItem]:
+    """Parse Option B Markdown Cue Script (`## ID | speaker: ... | location: ...` + POINT TO / SAY / NEXT)."""
+    # Strip outer ```markdown ... ``` code fences if user pasted directly from ChatGPT
+    text = markdown_text.strip()
+    fence_match = re.search(r"```(?:markdown|md)?\s*\n(.*?)```", text, re.DOTALL | re.IGNORECASE)
+    if fence_match and "## " in fence_match.group(1):
+        text = fence_match.group(1).strip()
+
+    header_re = re.compile(r"^##\s+(.+)$", re.MULTILINE)
+    matches = list(header_re.finditer(text))
+    cues: List[CueItem] = []
+
+    for idx, m in enumerate(matches):
+        header_line = m.group(1).strip()
+        body_start = m.end()
+        body_end = matches[idx + 1].start() if idx + 1 < len(matches) else len(text)
+        body = text[body_start:body_end].strip()
+
+        parts = [p.strip() for p in header_line.split("|")]
+        cue_id = re.sub(r"[^A-Za-z0-9_-]", "_", parts[0]) if parts else f"cue_{idx + 1:02d}"
+        speaker_raw = "vn_01"
+        ref_name: Optional[str] = None
+        location = "Presentation"
+
+        for part in parts[1:]:
+            if ":" in part:
+                k, v = part.split(":", 1)
+                key = k.strip().lower()
+                val = v.strip()
+                if key in ("speaker", "spk", "voice"):
+                    speaker_raw = val
+                elif key in ("ref", "ref_style", "style"):
+                    ref_name = val or None
+                elif key in ("location", "loc", "source", "slide", "page"):
+                    location = val
+
+        # Extract POINT TO, SAY, NEXT fields (multiline-safe)
+        field_re = re.compile(
+            r"^(POINT TO|SAY|NEXT|TRANSITION)\s*:\s*(.*)$",
+            re.IGNORECASE,
+        )
+        fields: Dict[str, List[str]] = {"point_to": [], "say": [], "next": []}
+        active_key: Optional[str] = None
+
+        for raw_ln in body.splitlines():
+            ln = raw_ln.strip()
+            if not ln:
+                continue
+            fm = field_re.match(ln)
+            if fm:
+                tag = fm.group(1).upper()
+                val = fm.group(2).strip()
+                if tag == "POINT TO":
+                    active_key = "point_to"
+                elif tag == "SAY":
+                    active_key = "say"
+                else:
+                    active_key = "next"
+                if val:
+                    fields[active_key].append(val)
+            elif active_key is not None:
+                fields[active_key].append(ln)
+
+        say_text = _clean_ocr_text(" ".join(fields["say"]))
+        point_text = _clean_ocr_text(" ".join(fields["point_to"])) or "(Move cursor to this section)"
+        next_text = _clean_ocr_text(" ".join(fields["next"]))
+        if not say_text:
+            continue
+
+        cues.append(
+            CueItem(
+                cue_id=cue_id,
+                source=location,
+                speaker_id=resolve_speaker_alias(speaker_raw, profiles_root=profiles_root),
+                ref_name=ref_name,
+                point_to=point_text,
+                clean_text=say_text,
+                transition_note=next_text,
+            )
+        )
+
+    return cues
+
+
+def build_deck_from_markdown(
+    project_name: str,
+    markdown_text: str,
+    presentations_root: Path = Path("presentations"),
+    profiles_root: Path = Path("profiles"),
+) -> Tuple[CueDeck, Path]:
+    """Build and persist a CueDeck directly from a Markdown Cue Script."""
+    cues = parse_cue_script_markdown(markdown_text, profiles_root=profiles_root)
+    if not cues:
+        raise ValueError(
+            "No valid cues found! Each cue must start with `## <ID> | speaker: ...` and contain `SAY: ...`."
+        )
+    deck = CueDeck(project_name=project_name, cues=cues)
     deck_path = presentations_root / project_name / "deck.json"
     save_cue_deck(deck, deck_path)
     return deck, deck_path

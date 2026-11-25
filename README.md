@@ -14,6 +14,7 @@ This repository contains two complementary documents tailored to different audie
 4. **[Project Guide (For Humans)](docs/PROJECT_GUIDE.md)** — A clear, readable overview of the product vision, two-stage architecture, dataset strategy, hardware plan, and development roadmap.
 5. **[AI Agent Technical Specification (For ChatGPT / Coding Agents)](docs/AI_AGENT_SPEC.md)** — Single-file technical spec with exact JSON schemas, dataset pipeline, model choices, and implementation milestones.
 6. **[Speaker Recording Guide & Sample Scripts](docs/RECORDING_GUIDE.md)** — Setup checklist, 60/40 spontaneous + scripted presentation prompts, and commands to run the automated dataset pipeline.
+7. **[Cue Script Template & ChatGPT Prompt](docs/CUE_SCRIPT_TEMPLATE.md)** — Copy-paste ChatGPT prompt + working multi-speaker Markdown Cue Script example for **Tab 4: Cue Presenter (Live OBS)**.
 
 ---
 

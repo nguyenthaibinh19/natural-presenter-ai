@@ -17,6 +17,7 @@
 - `docs/PROJECT_GUIDE.md` — human-readable English guide for collaborators.
 - `docs/AI_AGENT_SPEC.md` — comprehensive machine-readable technical spec for ChatGPT / AI agents.
 - `docs/RECORDING_GUIDE.md` — speaker recording checklist (including iPhone 16 Lossless ALAC + soft room tips), 8 Part A spontaneous prompts, 18 Part B conversational scripts (~11–13 min across 3 sessions), and `--append` CLI workflow.
+- `docs/CUE_SCRIPT_TEMPLATE.md` — copy-paste ChatGPT prompt + complete working multi-speaker Markdown Cue Script example (`## <ID> | speaker: ... | location: ...` + `POINT TO:` / `SAY:` / `NEXT:`) for Tab 4 import.
 
 ### Code Implemented
 - `src/schemas.py` — Pydantic v2 data contracts (`DatasetClip`, `PauseEvent`, `StyleProfile`, `FewShotExample`, `HumanizeRequest`, `HumanizeResponse`, `SynthesizeRequest`) + JSONL/JSON persistence helpers.

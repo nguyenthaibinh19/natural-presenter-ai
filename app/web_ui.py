@@ -27,6 +27,7 @@ if str(ROOT_DIR) not in sys.path:
 
 from src.cue_presenter import (
     LiveCueController,
+    build_deck_from_markdown,
     build_presentation_deck,
     humanize_cue_deck,
     load_cue_deck,
@@ -430,10 +431,75 @@ def _parse_cue_id_from_label(label: str | None) -> str:
     return first.split(" ", 1)[1].strip() if " " in first else first
 
 
+def _cue_table_rows(project_name: str | None) -> List[List[str]]:
+    if not project_name or not _deck_path(project_name).exists():
+        return []
+    deck = load_cue_deck(_deck_path(project_name))
+    rows: List[List[str]] = []
+    for idx, c in enumerate(deck.cues, 1):
+        ready = f"🔊 {c.duration_sec}s" if (c.audio_path and Path(c.audio_path).exists()) else "⬜"
+        rows.append(
+            [
+                f"{idx:02d}",
+                c.cue_id,
+                c.speaker_id,
+                c.source,
+                ready,
+                (c.humanized_text or c.clean_text)[:120],
+            ]
+        )
+    return rows
+
+
+def cue_import_markdown(project_name: str, md_text: str, md_file):
+    name = "".join(ch if ch.isalnum() or ch in ("_", "-") else "_" for ch in (project_name or "").strip())
+    if not name:
+        name = "my_presentation"
+    content = ""
+    if md_file:
+        content = Path(md_file).read_text(encoding="utf-8")
+    elif md_text and md_text.strip():
+        content = md_text
+    if not content.strip():
+        return (
+            gr.Dropdown(choices=cue_list_decks()),
+            gr.Dropdown(),
+            _cue_table_rows(name),
+            live_controller.render_teleprompter_markdown(),
+            "Paste a Markdown Cue Script or upload a .md file first (see docs/CUE_SCRIPT_TEMPLATE.md).",
+        )
+    try:
+        deck, _ = build_deck_from_markdown(
+            project_name=name,
+            markdown_text=content,
+            presentations_root=PRESENTATIONS_DIR,
+            profiles_root=PROFILES_DIR,
+        )
+    except Exception as exc:
+        return (
+            gr.Dropdown(choices=cue_list_decks()),
+            gr.Dropdown(),
+            [],
+            live_controller.render_teleprompter_markdown(),
+            f"Import error: {exc}",
+        )
+    live_controller.load_deck(deck)
+    decks = cue_list_decks()
+    choices = _cue_choices_for_deck(name)
+    return (
+        gr.Dropdown(choices=decks, value=name),
+        gr.Dropdown(choices=choices, value=choices[0] if choices else None),
+        _cue_table_rows(name),
+        live_controller.render_teleprompter_markdown(),
+        f"✅ Imported Markdown Cue Script `{name}` ({len(deck.cues)} cues in exact order)!",
+    )
+
+
 def cue_load_deck_action(project_name: str | None):
     if not project_name or not _deck_path(project_name).exists():
         return (
             gr.Dropdown(choices=[], value=None),
+            [],
             live_controller.render_teleprompter_markdown(),
             "No deck found.",
         )
@@ -442,6 +508,7 @@ def cue_load_deck_action(project_name: str | None):
     choices = _cue_choices_for_deck(project_name)
     return (
         gr.Dropdown(choices=choices, value=choices[0] if choices else None),
+        _cue_table_rows(project_name),
         live_controller.render_teleprompter_markdown(),
         f"Loaded `{project_name}` ({len(deck.cues)} cues).",
     )
@@ -980,20 +1047,51 @@ def build_ui() -> gr.Blocks:
                     cue_edit_audio = gr.Audio(label="Pre-Rendered Cue Audio", type="filepath")
                     cue_save_one_btn = gr.Button("Save & Re-Render This Cue", variant="primary")
 
-                with gr.Accordion("Import New Presentation (Reading Copy PDF + Presenter .ipynb)", open=False):
+                with gr.Accordion("Cue Overview Table (All Cues at a Glance)", open=False):
+                    cue_overview_df = gr.Dataframe(
+                        headers=["#", "Cue ID", "Speaker", "Location", "Audio", "Spoken Script"],
+                        value=_cue_table_rows(init_deck),
+                        interactive=False,
+                        wrap=True,
+                    )
+
+                with gr.Accordion("Import Cue Script from ChatGPT (.md / Paste Text — Recommended)", open=False):
+                    gr.Markdown(
+                        "Ask ChatGPT to format your presentation using **`docs/CUE_SCRIPT_TEMPLATE.md`**, "
+                        "then paste the output below (or upload `.md`). Friendly speaker names like `binh` / `ege` auto-resolve!"
+                    )
+                    imp_md_name = gr.Textbox(label="Project Name", placeholder="e.g., lab3_presentation")
+                    imp_md_text = gr.Textbox(
+                        label="Paste Markdown Cue Script here",
+                        lines=10,
+                        placeholder="## 01 | speaker: ege | location: Notebook Cell 4\nPOINT TO: ...\nSAY: ...\nNEXT: ...",
+                    )
+                    imp_md_file = gr.File(
+                        label="Or Upload .md Cue Script File",
+                        file_types=[".md", ".txt"],
+                        type="filepath",
+                    )
+                    imp_md_btn = gr.Button("Import Cue Script (.md / Text)", variant="primary")
+
+                with gr.Accordion("Import Legacy Files (Reading Copy PDF + Presenter .ipynb)", open=False):
                     with gr.Row():
-                        imp_name = gr.Textbox(label="Project Name", placeholder="e.g., lab3_presentation")
+                        imp_name = gr.Textbox(label="Project Name", placeholder="e.g., lab2_presentation")
                         imp_merge = gr.Checkbox(value=True, label="Merge sentence fragments (e.g., N5a+N5b+N5c)")
                     with gr.Row():
                         imp_pdf = gr.File(label="Reading Copy PDF (.pdf)", file_types=[".pdf"], type="filepath")
                         imp_nb = gr.File(label="Presenter Notebook (.ipynb)", file_types=[".ipynb"], type="filepath")
-                    imp_btn = gr.Button("Import & Parse Presentation Cues", variant="primary")
+                    imp_btn = gr.Button("Import & Parse PDF/Notebook Cues")
 
                 # Wire Tab 4 callbacks
                 cue_load_btn.click(
                     fn=cue_load_deck_action,
                     inputs=cue_deck_dd,
-                    outputs=[cue_item_dd, teleprompter_md, cue_action_status],
+                    outputs=[cue_item_dd, cue_overview_df, teleprompter_md, cue_action_status],
+                )
+                imp_md_btn.click(
+                    fn=cue_import_markdown,
+                    inputs=[imp_md_name, imp_md_text, imp_md_file],
+                    outputs=[cue_deck_dd, cue_item_dd, cue_overview_df, teleprompter_md, cue_action_status],
                 )
                 cue_arm_btn.click(
                     fn=lambda m: (live_controller.start_listeners(m), live_controller.render_teleprompter_markdown()),
