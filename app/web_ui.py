@@ -1,9 +1,10 @@
 """Local Gradio Web UI for Natural Presenter AI.
 
 Tabs:
-  1. Presentation Studio: Stage 1 (Ollama/Gemma Humanizer) + Stage 2 (F5-TTS Voice Synthesis)
-  2. Dataset QA Reviewer: Filter by TODO/OK/All, see live verified progress, listen to clips,
-     fix raw_text/clean_text, one-click Verify & Save Next, and rebuild style_profile.json.
+  1. Presentation Studio: Stage 1 (Ollama/Gemma Long-Form Humanizer + self-repairs + acronyms)
+     + Stage 2 (F5-TTS Voice Synthesis with inter-paragraph pauses)
+  2. Dataset QA Reviewer: Filter by TODO/OK/All, live verified progress, one-click Verify & Next
+  3. Pronunciation Dictionary: Edit/add acronyms & technical terms (e.g., MSE -> M S E)
 
 Usage:
     python app/web_ui.py
@@ -11,6 +12,7 @@ Usage:
 
 from __future__ import annotations
 
+import json
 import subprocess
 import sys
 from pathlib import Path
@@ -22,7 +24,12 @@ ROOT_DIR = Path(__file__).resolve().parent.parent
 if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
-from src.humanizer import humanize_script
+from src.humanizer import (
+    DEFAULT_PRONUNCIATION_PATH,
+    humanize_script,
+    load_pronunciation_map,
+    save_pronunciation_map,
+)
 from src.schemas import (
     DatasetClip,
     HumanizeRequest,
@@ -38,9 +45,9 @@ OUTPUTS_DIR = ROOT_DIR / "outputs"
 
 SAMPLE_SCRIPT = (
     "Hello everyone, today I want to walk you through our experiment results. "
-    "We tested two model architectures across eighty trials, and we noticed a clear drop "
-    "in baseline error after tuning the encoder resolution. "
-    "Next, let's look at the main trade-off between speed and accuracy."
+    "We trained a CNN autoencoder across eighty trials on a single GPU, and we measured reconstruction quality using MSE.\n\n"
+    "On the next slide, you can see that our MSE dropped by 24% after switching to ReLU activations and tuning the encoder resolution. "
+    "However, latency increased slightly, so let's discuss the trade-off between speed and accuracy."
 )
 
 QA_FILTERS = ["Only Unverified (TODO)", "All Clips", "Only Verified (OK)"]
@@ -73,7 +80,12 @@ def get_speaker_summary(display_name: str) -> str:
 
 
 def on_humanize(
-    display_name: str, clean_script: str, filler_level: str, tone: str, llm_model: str
+    display_name: str,
+    clean_script: str,
+    filler_level: str,
+    tone: str,
+    llm_model: str,
+    include_self_repairs: bool,
 ) -> Tuple[str, str]:
     speakers = discover_speakers()
     spk_id = speakers[display_name]
@@ -82,6 +94,7 @@ def on_humanize(
         clean_script=clean_script,
         filler_level=filler_level.lower(),
         tone=tone.lower(),
+        include_self_repairs=include_self_repairs,
     )
     resp, mode = humanize_script(
         req, profiles_root=PROFILES_DIR, llm_model=llm_model.strip() or None
@@ -90,7 +103,12 @@ def on_humanize(
 
 
 def on_synthesize(
-    display_name: str, humanized_script: str, tone: str, speed: float, quality_mode: str
+    display_name: str,
+    humanized_script: str,
+    tone: str,
+    speed: float,
+    quality_mode: str,
+    paragraph_pause_ms: int,
 ) -> Tuple[str, str]:
     speakers = discover_speakers()
     spk_id = speakers[display_name]
@@ -101,6 +119,7 @@ def on_synthesize(
         tone=tone.lower(),
         speed=speed,
         nfe_step=nfe_step,
+        paragraph_pause_ms=int(paragraph_pause_ms),
     )
     out_path, info = synthesizer.synthesize(req)
     return str(out_path), f"Stage 2 complete — {info}"
@@ -200,7 +219,6 @@ def _save_clip_core(
     meta_path = PROFILES_DIR / spk_id / "metadata.jsonl"
     clips = load_metadata(meta_path)
 
-    # Track current position in the filtered list before updating
     old_choices = qa_list_clips(display_name, filter_mode)
     old_ids = [_parse_clip_id(lbl) for lbl in old_choices]
     old_pos = old_ids.index(clip_id) if clip_id in old_ids else 0
@@ -220,7 +238,6 @@ def _save_clip_core(
     if not new_choices:
         next_label = None
     elif filter_mode == "Only Unverified (TODO)" and verified:
-        # The just-verified clip dropped out of TODO list, so same index points to the next TODO
         next_idx = min(old_pos, len(new_choices) - 1)
         next_label = new_choices[next_idx]
     else:
@@ -271,6 +288,37 @@ def qa_refresh_profile(display_name: str) -> str:
     return f"Style profile refreshed!\n{res.stdout.strip()}"
 
 
+# --- Pronunciation Dictionary helpers ---
+
+
+def pron_load_json() -> str:
+    return json.dumps(load_pronunciation_map(DEFAULT_PRONUNCIATION_PATH), indent=2, ensure_ascii=False)
+
+
+def pron_add_term(term: str, spoken: str) -> Tuple[str, str]:
+    term = term.strip()
+    spoken = spoken.strip()
+    if not term or not spoken:
+        return pron_load_json(), "Please enter both a written term (e.g., MSE) and spoken form (e.g., M S E)."
+    mapping = load_pronunciation_map(DEFAULT_PRONUNCIATION_PATH)
+    mapping[term] = spoken
+    save_pronunciation_map(mapping, DEFAULT_PRONUNCIATION_PATH)
+    return pron_load_json(), f"Saved rule: `{term}` → `{spoken}` (takes effect immediately!)"
+
+
+def pron_save_raw_json(raw_json: str) -> str:
+    try:
+        parsed = json.loads(raw_json)
+        if not isinstance(parsed, dict) or not all(
+            isinstance(k, str) and isinstance(v, str) for k, v in parsed.items()
+        ):
+            return "Error: Must be a JSON object mapping string -> string."
+        save_pronunciation_map(parsed, DEFAULT_PRONUNCIATION_PATH)
+        return f"Saved {len(parsed)} pronunciation rules to config/pronunciation_map.json!"
+    except Exception as exc:
+        return f"Invalid JSON: {exc}"
+
+
 def build_ui() -> gr.Blocks:
     speakers = discover_speakers()
     speaker_names = list(speakers.keys())
@@ -280,7 +328,7 @@ def build_ui() -> gr.Blocks:
     with gr.Blocks(title="Natural Presenter AI") as demo:
         gr.Markdown(
             "# Natural Presenter AI\n"
-            "Multi-speaker, accent-preserving English presentation studio powered by **Ollama/Gemma** + **F5-TTS**."
+            "Multi-speaker, accent-preserving English presentation studio powered by **Ollama/Gemma** + **Fine-Tuned F5-TTS**."
         )
 
         with gr.Tabs():
@@ -295,7 +343,7 @@ def build_ui() -> gr.Blocks:
                     filler_radio = gr.Radio(
                         choices=["None", "Low", "Medium", "High"],
                         value="Medium",
-                        label="Hesitation / Filler Level (uh, um, eh)",
+                        label="Hesitation / Filler Level (uh, um, like, eh)",
                     )
                     tone_dd = gr.Dropdown(
                         choices=["Presentation", "Explaining", "Emphasis"],
@@ -307,26 +355,33 @@ def build_ui() -> gr.Blocks:
                         label="Stage 1 Ollama/LLM Model",
                     )
 
-                profile_md = gr.Markdown(
-                    get_speaker_summary(default_speaker) if default_speaker else ""
-                )
+                with gr.Row():
+                    profile_md = gr.Markdown(
+                        get_speaker_summary(default_speaker) if default_speaker else ""
+                    )
+                    self_repair_chk = gr.Checkbox(
+                        value=True,
+                        label="Include subtle self-repairs & varied hesitations in long scripts (e.g., 'accuracy— sorry, error')",
+                    )
+
                 speaker_dd.change(fn=get_speaker_summary, inputs=speaker_dd, outputs=profile_md)
 
                 clean_box = gr.Textbox(
-                    label="1. Clean Presentation Script (Input)",
+                    label="1. Clean Presentation Script (Separate slides/sections with a blank line for natural pauses)",
                     value=SAMPLE_SCRIPT,
-                    lines=5,
-                    placeholder="Paste your polished English presentation script here...",
+                    lines=7,
+                    placeholder="Paste your polished English presentation script here (use blank lines between slides/paragraphs)...",
                 )
 
                 humanize_btn = gr.Button(
-                    "Step 1: Humanize Script (Add Speaker's Natural Rhythm)", variant="primary"
+                    "Step 1: Humanize Script (Apply Speaker Rhythm + Acronyms + Self-Repairs)",
+                    variant="primary",
                 )
                 stage1_status = gr.Textbox(label="Stage 1 Status", interactive=False)
 
                 humanized_box = gr.Textbox(
                     label="2. Humanized Spoken Script (Editable before generating voice)",
-                    lines=5,
+                    lines=7,
                     placeholder="Click 'Step 1: Humanize Script' or type directly here...",
                 )
 
@@ -337,6 +392,13 @@ def build_ui() -> gr.Blocks:
                         value=1.0,
                         step=0.05,
                         label="Speaking Speed",
+                    )
+                    para_pause_slider = gr.Slider(
+                        minimum=200,
+                        maximum=1500,
+                        value=650,
+                        step=50,
+                        label="Slide / Paragraph Pause (ms)",
                     )
                     quality_radio = gr.Radio(
                         choices=["Fast Preview (16 steps — 2x faster)", "High Quality (32 steps)"],
@@ -352,12 +414,26 @@ def build_ui() -> gr.Blocks:
 
                 humanize_btn.click(
                     fn=on_humanize,
-                    inputs=[speaker_dd, clean_box, filler_radio, tone_dd, llm_box],
+                    inputs=[
+                        speaker_dd,
+                        clean_box,
+                        filler_radio,
+                        tone_dd,
+                        llm_box,
+                        self_repair_chk,
+                    ],
                     outputs=[humanized_box, stage1_status],
                 )
                 synth_btn.click(
                     fn=on_synthesize,
-                    inputs=[speaker_dd, humanized_box, tone_dd, speed_slider, quality_radio],
+                    inputs=[
+                        speaker_dd,
+                        humanized_box,
+                        tone_dd,
+                        speed_slider,
+                        quality_radio,
+                        para_pause_slider,
+                    ],
                     outputs=[audio_out, stage2_status],
                 )
 
@@ -491,6 +567,38 @@ def build_ui() -> gr.Blocks:
                     fn=qa_refresh_profile,
                     inputs=qa_speaker_dd,
                     outputs=qa_status,
+                )
+
+            # --- TAB 3: PRONUNCIATION DICTIONARY ---
+            with gr.Tab("Pronunciation Dictionary"):
+                gr.Markdown(
+                    "### Technical Acronyms & Custom Pronunciations (`config/pronunciation_map.json`)\n"
+                    "Applied automatically in **both Stage 1 and Stage 2** so acronyms like `MSE` → `M S E` "
+                    "are never misread as a single word."
+                )
+                with gr.Row():
+                    pron_term_box = gr.Textbox(label="Written Term (exact match)", placeholder="e.g., MSE")
+                    pron_spoken_box = gr.Textbox(label="Spoken Form for F5-TTS", placeholder="e.g., M S E")
+                    pron_add_btn = gr.Button("Add / Update Rule", variant="primary")
+
+                pron_status = gr.Textbox(label="Dictionary Status", interactive=False)
+                pron_json_box = gr.Code(
+                    value=pron_load_json(),
+                    language="json",
+                    label="Full Pronunciation Map (JSON)",
+                    lines=16,
+                )
+                pron_save_json_btn = gr.Button("Save Full JSON")
+
+                pron_add_btn.click(
+                    fn=pron_add_term,
+                    inputs=[pron_term_box, pron_spoken_box],
+                    outputs=[pron_json_box, pron_status],
+                )
+                pron_save_json_btn.click(
+                    fn=pron_save_raw_json,
+                    inputs=pron_json_box,
+                    outputs=pron_status,
                 )
 
     return demo

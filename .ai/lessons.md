@@ -28,3 +28,6 @@ Durable lessons captured during development so future contributors and AI agents
 
 9. **University JupyterHub Pod OOMKill from F5-TTS `num_workers=16` (2026-11-24):**  
    F5-TTS `trainer.py` hardcodes `DataLoader(num_workers=16, persistent_workers=True, pin_memory=True)`, which forks 16 Python processes and exhausts container CPU RAM / `/dev/shm` on Kubernetes JupyterHub pods (triggering `Server unavailable or unreachable`), even when GPU VRAM (NVIDIA L40 44GB) is nearly empty. Patching `trainer.py` to `num_workers=0, persistent_workers=False, pin_memory=False` eliminates the pod OOMKill cleanly.
+
+10. **Acronym Pronunciation in G2P-Free F5-TTS (`MSE` → *"m-se"*) (2026-11-25):**  
+    Because F5-TTS reads raw characters without a G2P dictionary, uppercase acronyms like `MSE` or `CNN` can be mispronounced as single words. Applying a dual-layer editable lexicon (`config/pronunciation_map.json`, mapping `MSE` → `M S E`, `ReLU` → `ray-loo`, etc.) in both Stage 1 and Stage 2 fixes this cleanly without retraining.

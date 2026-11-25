@@ -20,9 +20,10 @@
 
 ### Code Implemented
 - `src/schemas.py` — Pydantic v2 data contracts (`DatasetClip`, `PauseEvent`, `StyleProfile`, `FewShotExample`, `HumanizeRequest`, `HumanizeResponse`, `SynthesizeRequest`) + JSONL/JSON persistence helpers.
-- `src/humanizer.py` — Stage 1 Personalized Script Humanizer defaulting to local **Ollama/Gemma (`gemma3:4b`)** (`http://localhost:11434/v1`) with graceful offline profile fallback (`ADR-005`).
-- `src/synthesizer.py` — Stage 2 F5-TTS synthesizer supporting Zero-Shot reference clips (`refs/presentation_ref.wav`) and automatic per-speaker checkpoint/LoRA loading (`lora/`) with chunking & smooth audio stitching.
-- `app/web_ui.py` — Local Gradio Web UI (`http://127.0.0.1:7860`) with two tabs: **Presentation Studio** (Stage 1 + Stage 2) and **Dataset QA Reviewer** (live verified progress counter, default `Only Unverified (TODO)` filter with `✅ OK` / `⬜ TODO` badges, one-click `✅ Verify & Next Clip`, and `Rebuild style_profile.json`).
+- `src/humanizer.py` — Stage 1 Long-Form Personalized Script Humanizer defaulting to local **Ollama/Gemma (`gemma3:4b`)** (`ADR-005`) with paragraph-by-paragraph disfluency budgeting (diverse fillers + optional subtle self-repairs) and automatic acronym/pronunciation normalization (`config/pronunciation_map.json`).
+- `src/synthesizer.py` — Stage 2 F5-TTS synthesizer supporting Zero-Shot and auto-detected per-speaker checkpoints (`lora/`), pronunciation safety pass, and multi-paragraph/slide synthesis with configurable inter-paragraph pauses (`paragraph_pause_ms`).
+- `config/pronunciation_map.json` — Editable technical acronym/term lexicon (e.g., `MSE` → `M S E`, `CNN` → `C N N`, `ReLU` → `ray-loo`, `VRAM` → `V-ram`).
+- `app/web_ui.py` — Local Gradio Web UI (`http://127.0.0.1:7860`) with three tabs: **Presentation Studio** (Stage 1 with self-repair toggle + Stage 2 with slide/paragraph pause slider), **Dataset QA Reviewer** (live verified progress, default TODO filter, 1-click Verify & Next), and **Pronunciation Dictionary** (live JSON rule editor).
 - `scripts/05_train_cloud.py` — Prepares F5-TTS fine-tuning dataset (`metadata.csv`, `duration.json`) and invokes `f5-tts_finetune-cli` with pretrained 2545-token vocab (`--tokenizer pinyin`, raw chars for English), `--num_warmup_updates 100`, and `--bnb_optimizer`.
 - `scripts/06_export_humanizer_sft.py` — Exports verified `(clean_text -> raw_text)` pairs across speakers into ChatML JSONL (`profiles/humanizer_sft.jsonl`) for optional future QLoRA fine-tuning of Gemma/Qwen Stage 1 models.
 - `notebooks/05_finetune_f5tts_colab.ipynb` — Ready-to-run Google Colab Pro notebook (NVIDIA L4 / Tesla T4) with Google Drive auto-checkpointing and Cell 6 slim FP16 `.safetensors` exporter (~643 MB).

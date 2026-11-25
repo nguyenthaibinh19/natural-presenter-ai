@@ -1,8 +1,10 @@
-"""Stage 2: Accent-Preserving Voice Synthesizer (F5-TTS).
+"""Stage 2: Accent-Preserving Long-Form Voice Synthesizer (F5-TTS).
 
 Supports:
   - Zero-Shot Reference Mode (using profiles/<speaker_id>/refs/presentation_ref.wav + .txt)
-  - Per-Speaker Fine-Tuned Checkpoint/LoRA Mode (automatically detected in profiles/<speaker_id>/lora/)
+  - Per-Speaker Fine-Tuned Checkpoint/LoRA Mode (auto-detected in profiles/<speaker_id>/lora/)
+  - Automatic pronunciation lexicon safety pass (MSE -> M S E, CNN -> C N N, etc.)
+  - Long-form paragraph/slide synthesis with natural inter-paragraph pauses & smooth fades.
 """
 
 from __future__ import annotations
@@ -16,44 +18,27 @@ import numpy as np
 import soundfile as sf
 import torch
 
+from src.humanizer import apply_pronunciation_map
 from src.schemas import SynthesizeRequest
 
 TARGET_SR = 24000
 
 
-def split_into_chunks(text: str, max_chars: int = 220) -> List[str]:
-    """Split a presentation script into natural sentence-aligned chunks for stable TTS."""
-    text = re.sub(r"\s+", " ", text.strip())
-    sentences = re.split(r"(?<=[.!?])\s+", text)
-    chunks: List[str] = []
-    current = ""
-
-    for sent in sentences:
-        if not sent:
-            continue
-        if not current:
-            current = sent
-        elif len(current) + 1 + len(sent) <= max_chars:
-            current = f"{current} {sent}"
-        else:
-            chunks.append(current)
-            current = sent
-
-    if current:
-        chunks.append(current)
-    return chunks
-
-
-def stitch_audio(chunks: List[np.ndarray], sr: int, pause_ms: int = 350, fade_ms: int = 20) -> np.ndarray:
-    """Concatenate synthesized chunks with natural inter-sentence pauses and short fades."""
-    if not chunks:
+def stitch_paragraphs(
+    paragraph_wavs: List[np.ndarray],
+    sr: int,
+    paragraph_pause_ms: int = 650,
+    fade_ms: int = 20,
+) -> np.ndarray:
+    """Concatenate synthesized paragraphs with natural slide/section pauses and soft fades."""
+    if not paragraph_wavs:
         return np.zeros(int(sr * 0.5), dtype=np.float32)
 
     fade_samples = min(int(sr * fade_ms / 1000), 480)
-    pause = np.zeros(int(sr * pause_ms / 1000), dtype=np.float32)
+    pause = np.zeros(int(sr * paragraph_pause_ms / 1000), dtype=np.float32)
 
     parts: List[np.ndarray] = []
-    for idx, wav in enumerate(chunks):
+    for idx, wav in enumerate(paragraph_wavs):
         wav = np.asarray(wav, dtype=np.float32).flatten()
         if len(wav) > 2 * fade_samples:
             fade_in = np.linspace(0.0, 1.0, fade_samples, dtype=np.float32)
@@ -61,7 +46,7 @@ def stitch_audio(chunks: List[np.ndarray], sr: int, pause_ms: int = 350, fade_ms
             wav[:fade_samples] *= fade_in
             wav[-fade_samples:] *= fade_out
         parts.append(wav)
-        if idx < len(chunks) - 1:
+        if idx < len(paragraph_wavs) - 1:
             parts.append(pause)
 
     combined = np.concatenate(parts)
@@ -72,7 +57,7 @@ def stitch_audio(chunks: List[np.ndarray], sr: int, pause_ms: int = 350, fade_ms
 
 
 class PresentationSynthesizer:
-    """Lazy-loading F5-TTS wrapper that caches the base model on RTX 5060 GPU."""
+    """Lazy-loading F5-TTS wrapper that caches the active model on local RTX 5060 GPU."""
 
     def __init__(self, profiles_root: Path = Path("profiles"), outputs_dir: Path = Path("outputs")):
         self.profiles_root = profiles_root
@@ -105,7 +90,7 @@ class PresentationSynthesizer:
         return None
 
     def synthesize(self, req: SynthesizeRequest) -> Tuple[Path, str]:
-        """Synthesize presentation audio and return (output_wav_path, mode_info)."""
+        """Synthesize short or long multi-paragraph presentation audio."""
         spk_dir = self.profiles_root / req.speaker_id
         ref_wav = spk_dir / "refs" / "presentation_ref.wav"
         ref_txt_path = spk_dir / "refs" / "presentation_ref.txt"
@@ -125,27 +110,41 @@ class PresentationSynthesizer:
             else f"Zero-Shot F5-TTS (ref: {ref_wav.name})"
         )
 
-        t0 = time.perf_counter()
-        wav, sr, _ = tts.infer(
-            ref_file=str(ref_wav),
-            ref_text=ref_text,
-            gen_text=req.humanized_script.strip(),
-            speed=req.speed,
-            nfe_step=req.nfe_step,
-            cross_fade_duration=0.15,
-            remove_silence=False,
-        )
-        elapsed = time.perf_counter() - t0
+        # Split by blank lines to insert natural slide/paragraph pauses, and apply pronunciation safety pass
+        paragraphs = [
+            apply_pronunciation_map(p.strip())
+            for p in re.split(r"\n\s*\n", req.humanized_script.strip())
+            if p.strip()
+        ]
+        if not paragraphs:
+            paragraphs = [apply_pronunciation_map(req.humanized_script.strip())]
 
-        final_audio = np.asarray(wav, dtype=np.float32).flatten()
-        peak = np.max(np.abs(final_audio))
-        if peak > 1e-6:
-            final_audio = final_audio / peak * 0.92
+        t0 = time.perf_counter()
+        para_wavs: List[np.ndarray] = []
+        sr = TARGET_SR
+
+        for para in paragraphs:
+            wav, sr, _ = tts.infer(
+                ref_file=str(ref_wav),
+                ref_text=ref_text,
+                gen_text=para,
+                speed=req.speed,
+                nfe_step=req.nfe_step,
+                cross_fade_duration=0.15,
+                remove_silence=False,
+            )
+            para_wavs.append(wav)
+
+        elapsed = time.perf_counter() - t0
+        final_audio = stitch_paragraphs(
+            para_wavs, sr=sr, paragraph_pause_ms=req.paragraph_pause_ms
+        )
 
         out_name = f"{req.speaker_id}_{int(time.time())}.wav"
         out_path = self.outputs_dir / out_name
         sf.write(str(out_path), final_audio, sr, subtype="PCM_16")
         return (
             out_path,
-            f"{mode_info} | {req.nfe_step} steps | audio: {len(final_audio) / sr:.1f}s | generated in {elapsed:.1f}s",
+            f"{mode_info} | {len(paragraphs)} para(s) | {req.nfe_step} steps | "
+            f"audio: {len(final_audio) / sr:.1f}s | generated in {elapsed:.1f}s",
         )

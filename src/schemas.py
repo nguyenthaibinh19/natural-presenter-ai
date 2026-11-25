@@ -102,6 +102,10 @@ class HumanizeRequest(BaseModel):
     clean_script: str = Field(..., min_length=1)
     filler_level: FillerLevel = Field(default="medium")
     tone: ToneType = Field(default="presentation")
+    include_self_repairs: bool = Field(
+        default=True,
+        description="Allow subtle natural self-repairs / light repetitions in longer scripts.",
+    )
 
 
 class HumanizeResponse(BaseModel):
@@ -120,6 +124,12 @@ class SynthesizeRequest(BaseModel):
     tone: ToneType = Field(default="presentation")
     speed: float = Field(default=1.0, ge=0.75, le=1.25)
     nfe_step: int = Field(default=16, ge=8, le=64)
+    paragraph_pause_ms: int = Field(
+        default=650,
+        ge=150,
+        le=2000,
+        description="Pause duration in milliseconds inserted between paragraphs / slide breaks.",
+    )
 
 
 def load_metadata(path: Path) -> List[DatasetClip]:
