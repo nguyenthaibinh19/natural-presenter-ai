@@ -1,7 +1,7 @@
 """Free CPU-Only Hugging Face Spaces Portfolio Showcase for Natural Presenter AI.
 
 Demonstrates:
-  1. Pre-rendered Audio Comparisons (Zero-Shot vs Fine-Tuned FT-001, Filler Levels, Acronym Fix, Multi-Speaker Handoff)
+  1. Pre-rendered Audio Comparisons (Zero-Shot vs Fine-Tuned FT-001, Filler Levels, Acronym Fix, Slide Pause & Self-Repair)
   2. Live Stage 1 Playground (Acronym Normalization + Individualized Speaker Style Adaptation — runs on CPU!)
   3. Engineering Benchmarks & Architecture Overview
 """
@@ -146,7 +146,9 @@ def build_showcase() -> gr.Blocks:
                 gr.Markdown(
                     "### Side-by-Side Listening Comparisons\n"
                     "Compare the **Zero-Shot baseline (7–8/10)** against our **26.65-minute Fine-Tuned F5-TTS checkpoint (`FT-001`, 9.5–10/10)**, "
-                    "individualized hesitation intensity, acronym pronunciation (`MSE` → `M S E`), and a two-speaker presentation handoff."
+                    "individualized hesitation intensity, acronym pronunciation (`MSE` → `M S E`), and natural slide-transition breathing pauses.\n\n"
+                    "*Voice Consent Note: All published audio samples below use exclusively the consenting author's own voice (`vn_01`). "
+                    "The local studio supports N speakers with isolated per-speaker profiles and weights.*"
                 )
 
                 with gr.Row():
@@ -164,24 +166,24 @@ def build_showcase() -> gr.Blocks:
                 with gr.Row():
                     gr.Audio(
                         value=sample_path("03_filler_none.wav"),
-                        label="C. Filler Level: NONE (Formal Polished Delivery)",
+                        label="C. Filler Level: NONE + Clear Studio Reference",
                         type="filepath",
                     )
                     gr.Audio(
                         value=sample_path("04_filler_medium_natural.wav"),
-                        label="D. Filler Level: MEDIUM (Speaker's Authentic uh / like Rhythm)",
+                        label="D. Filler Level: MEDIUM + Natural Presentation Reference (uh / like)",
                         type="filepath",
                     )
 
                 with gr.Row():
                     gr.Audio(
                         value=sample_path("05_acronym_mse_fixed.wav"),
-                        label="E. Acronym Lexicon Fix (MSE, CNN, GPU, ReLU)",
+                        label="E. Acronym Lexicon Fix (MSE, CNN, GPU, ReLU, FP16)",
                         type="filepath",
                     )
                     gr.Audio(
-                        value=sample_path("06_multi_speaker_handoff.wav"),
-                        label="F. Multi-Speaker Joint Presentation (Speaker 1 + Speaker 2 Handoff)",
+                        value=sample_path("06_self_repair_and_slide_pause.wav"),
+                        label="F. Multi-Paragraph Slide Pause (750ms) + Subtle Self-Repair",
                         type="filepath",
                     )
 
@@ -223,7 +225,7 @@ def build_showcase() -> gr.Blocks:
 | **Data Curation & QA** | 60/40 Spontaneous + Scripted split, iPhone 16 Lossless ALAC (34.7–42.6 dB SNR), Silero VAD, disfluency-preserving `faster-whisper`, custom Gradio QA Reviewer | **173 verified clips (26.65 min)**, 0 integrity errors |
 | **Accent-Preserving TTS** | Fine-tuned `F5TTS_v1_Base` (G2P-free Flow Matching) with pretrained 2545-token vocab (`warmup=100`, `lr=1e-5`, 60 epochs / 4,020 updates) | Final loss **0.408**, rated **9.5–10/10** with authentic Vietnamese-English accent preserved |
 | **Model Compression** | Pruned training checkpoint (`model_4000.pt`) to EMA FP16 `safetensors` | **3.38 GB → 643 MB (5.2× smaller)** |
-| **Local Edge Inference** | Single-pass F5-TTS batching + 16-step Fast Preview + Local Ollama `gemma3:4b` on RTX 5060 Laptop (8GB VRAM) | **5.3s for 6.5s audio** (faster than real time, \$0 API cost) |
+| **Local Edge Inference** | Single-pass F5-TTS batching + 16-step Fast Preview + Local Ollama `gemma3:4b` on RTX 5060 Laptop (8GB VRAM) | **5.3s for 6.5s audio** (faster than real time, $0 API cost) |
 | **Live OBS Cue Presenter** | Native Win32 `GetAsyncKeyState` global hotkeys (`F9` / `Alt+Space` / Mouse Side Button) + pre-rendered cue WAVs + synced `NOW SPEAKING` teleprompter | **0 ms latency**, smooth human cursor control over clean PDF/Jupyter deliverables |
 
 ### Responsible AI & Privacy

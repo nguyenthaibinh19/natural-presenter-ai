@@ -127,7 +127,8 @@ natural-presenter-ai/
 │   ├── 04_extract_style_profile.py   # Extracts WPM, filler distribution & few-shot examples
 │   ├── 05_train_cloud.py             # F5-TTS fine-tuning dataset exporter & CLI wrapper
 │   ├── 06_export_humanizer_sft.py    # Exports ChatML JSONL for optional Stage 1 Gemma QLoRA
-│   └── 07_generate_showcase_samples.py # Generates neutral audio showcase clips for Hugging Face Spaces
+│   ├── 07_generate_showcase_samples.py # Generates neutral self-voice showcase clips for HF Spaces
+│   └── 08_deploy_hf_space.py         # One-command HF Spaces deployer with Voice Consent Guard
 ├── notebooks/
 │   ├── 05_finetune_f5tts_colab.ipynb       # Google Colab Pro (T4/L4) fine-tuning + FP16 pruning
 │   └── 05_finetune_f5tts_jupyter_l40.ipynb # Linux JupyterLab (NVIDIA L40) fine-tuning notebook

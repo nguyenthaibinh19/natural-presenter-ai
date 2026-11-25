@@ -15,7 +15,10 @@ license: mit
 Zero-GPU interactive showcase for **[Natural Presenter AI](https://github.com/nguyenthaibinh19/natural-presenter-ai)** — a 100% local, privacy-first, multi-accent AI voice presentation studio built by **Thai Binh Nguyen** and **Ege Deniz**.
 
 ## Deploy to Hugging Face Spaces (Free Forever)
-1. Run `python scripts/07_generate_showcase_samples.py` locally on your RTX GPU to render the 6 neutral demo `.wav` clips into `hf_space/samples/`.
-2. Create a new **Gradio Space** (`CPU basic — Free`) on https://huggingface.co/spaces.
-3. Upload the contents of `hf_space/` (`README.md`, `app.py`, `requirements.txt`, and `samples/*.wav`).
-4. Paste the live Space URL into your GitHub `README.md` and CV!
+1. Run `python scripts/07_generate_showcase_samples.py` locally on your RTX GPU to render the 6 self-recorded demo `.wav` clips (`01`–`06`, `vn_01` only) into `hf_space/samples/`.
+2. Authenticate once with `hf auth login` (or set `HF_TOKEN`), then run:
+   ```powershell
+   python scripts/08_deploy_hf_space.py --repo-id <your-hf-username>/natural-presenter-ai-showcase
+   ```
+   *(Or manually create a **Gradio** Space on `CPU basic — Free` at https://huggingface.co/spaces and upload `hf_space/`.)*
+3. Paste the live Space URL into your GitHub `README.md` and CV!

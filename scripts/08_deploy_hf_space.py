@@ -1,0 +1,93 @@
+"""Step 8 (Optional): One-command deploy of `hf_space/` to Hugging Face Spaces (Free CPU).
+
+Safety Guard:
+  By default, refuses to upload any co-author audio (`06_multi_speaker_handoff.wav`)
+  unless `--allow-coauthor-consent` is explicitly passed.
+
+Usage:
+    # 1. Authenticate once with a Write token from https://huggingface.co/settings/tokens
+    hf auth login
+
+    # 2. Deploy the free CPU Gradio showcase Space
+    python scripts/08_deploy_hf_space.py --repo-id <your-hf-username>/natural-presenter-ai-showcase
+"""
+
+from __future__ import annotations
+
+import argparse
+import sys
+from pathlib import Path
+
+from huggingface_hub import HfApi
+from huggingface_hub.errors import LocalTokenNotFoundError
+
+ROOT_DIR = Path(__file__).resolve().parent.parent
+HF_SPACE_DIR = ROOT_DIR / "hf_space"
+COAUTHOR_FILES = {"06_multi_speaker_handoff.wav"}
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description="Deploy hf_space/ to a free CPU Hugging Face Gradio Space.")
+    parser.add_argument(
+        "--repo-id",
+        required=True,
+        help="Target Space ID in the form '<hf-username>/natural-presenter-ai-showcase'.",
+    )
+    parser.add_argument(
+        "--private",
+        action="store_true",
+        help="Create/keep the Space private instead of public.",
+    )
+    parser.add_argument(
+        "--allow-coauthor-consent",
+        action="store_true",
+        help="Allow uploading co-author audio samples (only after explicit consent).",
+    )
+    args = parser.parse_args()
+
+    samples_dir = HF_SPACE_DIR / "samples"
+    wavs = sorted(samples_dir.glob("*.wav")) if samples_dir.exists() else []
+    if not wavs:
+        print("ERROR: No .wav files found in hf_space/samples/. Run scripts/07_generate_showcase_samples.py first.")
+        sys.exit(1)
+
+    # Voice Consent Guard
+    blocked = [p.name for p in wavs if p.name in COAUTHOR_FILES and not args.allow_coauthor_consent]
+    if blocked:
+        print(f"BLOCKED by Voice Consent Guard: {blocked}")
+        print("Remove these files from hf_space/samples/ or pass --allow-coauthor-consent once consented.")
+        sys.exit(1)
+
+    api = HfApi()
+    try:
+        user_info = api.whoami()
+    except LocalTokenNotFoundError:
+        print("ERROR: Not logged in to Hugging Face.")
+        print("Run `hf auth login` (with a Write token from https://huggingface.co/settings/tokens) and retry.")
+        sys.exit(1)
+
+    print(f"Authenticated on Hugging Face as: {user_info.get('name', 'unknown')}")
+    print(f"Preparing Space: https://huggingface.co/spaces/{args.repo_id} (private={args.private})")
+    print(f"Audio samples to upload ({len(wavs)}): {[p.name for p in wavs]}")
+
+    api.create_repo(
+        repo_id=args.repo_id,
+        repo_type="space",
+        space_sdk="gradio",
+        private=args.private,
+        exist_ok=True,
+    )
+
+    api.upload_folder(
+        folder_path=str(HF_SPACE_DIR),
+        repo_id=args.repo_id,
+        repo_type="space",
+        ignore_patterns=["__pycache__/*", "*.pyc", ".DS_Store"],
+        commit_message="Deploy Natural Presenter AI portfolio showcase (self-recorded voice samples only)",
+    )
+
+    print(f"\nDEPLOY_OK: https://huggingface.co/spaces/{args.repo_id}")
+
+
+if __name__ == "__main__":
+    main()
