@@ -303,25 +303,42 @@ def prerender_cue_deck(
 
 
 class LiveCueController:
-    """Zero-latency Windows global hotkey + side-mouse-button soundboard for OBS recording."""
+    """Zero-latency Windows global hotkey + synced teleprompter controller for OBS recording.
+
+    Uses Win32 GetAsyncKeyState polling (no hook drops, no admin required, works across all windows)
+    and keeps the displayed cue strictly synced with the currently playing audio until it finishes.
+    """
 
     def __init__(self) -> None:
         self.deck: Optional[CueDeck] = None
         self.current_idx: int = 0
+        self.playing_idx: Optional[int] = None
         self.last_played_idx: Optional[int] = None
+        self.is_playing: bool = False
+        self.play_end_time: float = 0.0
         self.active: bool = False
         self.enable_mouse_trigger: bool = False
-        self.last_event: str = "Idle — Load & Pre-render a Cue Deck, then click Start Hotkeys."
+        self.last_event: str = "Idle — Load & Pre-render a Cue Deck, then click ARM GLOBAL HOTKEYS."
         self._lock = threading.Lock()
-        self._kb_listener = None
-        self._mouse_listener = None
+        self._stop_poll = threading.Event()
+        self._poll_thread: Optional[threading.Thread] = None
+        self._advance_timer: Optional[threading.Timer] = None
+        self._play_token: int = 0
 
     def load_deck(self, deck: CueDeck) -> None:
         with self._lock:
+            self._cancel_timer_locked()
             self.deck = deck
             self.current_idx = 0
+            self.playing_idx = None
             self.last_played_idx = None
+            self.is_playing = False
             self.last_event = f"Loaded deck '{deck.project_name}' ({len(deck.cues)} cues)."
+
+    def _cancel_timer_locked(self) -> None:
+        if self._advance_timer is not None:
+            self._advance_timer.cancel()
+            self._advance_timer = None
 
     def _play_wav_async(self, wav_path: str) -> None:
         if sys.platform == "win32":
@@ -330,51 +347,105 @@ class LiveCueController:
             winsound.PlaySound(None, 0)
             winsound.PlaySound(wav_path, winsound.SND_FILENAME | winsound.SND_ASYNC)
 
+    def _on_playback_finished(self, token: int, finished_idx: int, advance_after: bool) -> None:
+        with self._lock:
+            if token != self._play_token:
+                return
+            self.is_playing = False
+            self.playing_idx = None
+            self._advance_timer = None
+            if advance_after and self.deck and finished_idx == self.current_idx:
+                self.current_idx = min(self.current_idx + 1, len(self.deck.cues))
+            if self.deck and self.current_idx < len(self.deck.cues):
+                nxt = self.deck.cues[self.current_idx]
+                self.last_event = f"✅ Finished [{self.deck.cues[finished_idx].cue_id}] — Ready for [{nxt.cue_id}] ({nxt.speaker_id})"
+            else:
+                self.last_event = "🎉 Finished final cue!"
+
     def stop_audio(self) -> str:
         if sys.platform == "win32":
             import winsound
 
             winsound.PlaySound(None, 0)
         with self._lock:
-            self.last_event = "⏹ Stopped playback."
+            self._play_token += 1
+            self._cancel_timer_locked()
+            self.is_playing = False
+            self.playing_idx = None
+            self.last_event = "⏹ Stopped playback (staying on current cue so you can retry with F9 / Alt+Space)."
             return self.last_event
 
+    def _start_cue_locked(self, idx: int, advance_after: bool, prefix: str) -> str:
+        import time
+
+        assert self.deck is not None
+        cue = self.deck.cues[idx]
+        if not cue.audio_path or not Path(cue.audio_path).exists():
+            self.last_event = f"⚠️ Cue {cue.cue_id} has no pre-rendered audio yet!"
+            return self.last_event
+
+        self._cancel_timer_locked()
+        self._play_token += 1
+        token = self._play_token
+
+        self._play_wav_async(cue.audio_path)
+        self.is_playing = True
+        self.playing_idx = idx
+        self.last_played_idx = idx
+        dur = max(0.5, float(cue.duration_sec or 3.0))
+        self.play_end_time = time.monotonic() + dur
+
+        self._advance_timer = threading.Timer(
+            dur + 0.15,
+            self._on_playback_finished,
+            args=(token, idx, advance_after),
+        )
+        self._advance_timer.daemon = True
+        self._advance_timer.start()
+
+        self.last_event = f"{prefix} [{cue.cue_id}] ({cue.speaker_id}, {dur:.1f}s) — screen stays synced until audio ends!"
+        return self.last_event
+
     def play_current_and_advance(self) -> str:
+        """Play current cue while keeping screen locked on it; auto-advance only when audio finishes.
+
+        If pressed while a cue is ALREADY playing, immediately skips to and plays the next cue.
+        """
         with self._lock:
             if not self.deck or not self.deck.cues:
                 self.last_event = "No deck loaded."
                 return self.last_event
+
+            if self.is_playing and self.playing_idx is not None:
+                # User pressed F9 early to jump straight into the next cue
+                next_idx = self.playing_idx + 1
+                if next_idx >= len(self.deck.cues):
+                    self.current_idx = len(self.deck.cues)
+                    self.last_event = "Already at end of presentation!"
+                    return self.last_event
+                self.current_idx = next_idx
+                return self._start_cue_locked(self.current_idx, advance_after=True, prefix="▶ Playing")
+
             if self.current_idx >= len(self.deck.cues):
-                self.last_event = "End of presentation! Press F8 to replay last cue or Reset."
+                self.last_event = "End of presentation! Press F8 / Alt+R to replay last cue or click Reset."
                 return self.last_event
 
-            cue = self.deck.cues[self.current_idx]
-            if not cue.audio_path or not Path(cue.audio_path).exists():
-                self.last_event = f"Cue {cue.cue_id} has no pre-rendered audio yet!"
-                return self.last_event
-
-            self._play_wav_async(cue.audio_path)
-            self.last_played_idx = self.current_idx
-            self.current_idx = min(self.current_idx + 1, len(self.deck.cues))
-            self.last_event = (
-                f"▶ Playing [{cue.cue_id}] ({cue.speaker_id}, {cue.duration_sec}s) — "
-                f"Next up: {self.deck.cues[self.current_idx].cue_id if self.current_idx < len(self.deck.cues) else 'END'}"
-            )
-            return self.last_event
+            return self._start_cue_locked(self.current_idx, advance_after=True, prefix="▶ Playing")
 
     def replay_last(self) -> str:
         with self._lock:
             if not self.deck or not self.deck.cues:
                 return "No deck loaded."
-            idx = self.last_played_idx if self.last_played_idx is not None else max(0, self.current_idx - 1)
-            cue = self.deck.cues[idx]
-            if not cue.audio_path or not Path(cue.audio_path).exists():
-                self.last_event = f"Cue {cue.cue_id} has no audio."
-                return self.last_event
-            self._play_wav_async(cue.audio_path)
-            self.last_played_idx = idx
-            self.last_event = f"🔁 Replaying [{cue.cue_id}] ({cue.speaker_id}, {cue.duration_sec}s)"
-            return self.last_event
+            if self.is_playing and self.playing_idx is not None:
+                idx = self.playing_idx
+                advance = True
+            elif self.last_played_idx is not None:
+                idx = self.last_played_idx
+                advance = False
+            else:
+                idx = max(0, min(self.current_idx, len(self.deck.cues) - 1))
+                advance = False
+            return self._start_cue_locked(idx, advance_after=advance, prefix="🔁 Replaying")
 
     def step_index(self, delta: int) -> str:
         with self._lock:
@@ -385,86 +456,153 @@ class LiveCueController:
             self.last_event = f"Moved cursor to [{cue.cue_id}] ({cue.speaker_id})"
             return self.last_event
 
-    def start_listeners(self, enable_mouse_x2: bool = False) -> str:
-        from pynput import keyboard, mouse
+    def reset_to_start(self) -> str:
+        self.stop_audio()
+        with self._lock:
+            self.current_idx = 0
+            self.last_played_idx = None
+            self.last_event = "↺ Reset to Cue #1."
+            return self.last_event
 
+    def start_listeners(self, enable_mouse_x2: bool = False) -> str:
+        """Start native Win32 GetAsyncKeyState polling thread (reliable across all windows & Fn-Lock)."""
         self.stop_listeners()
         self.enable_mouse_trigger = enable_mouse_x2
+        self._stop_poll.clear()
 
-        def on_key_press(key):
-            try:
-                if key == keyboard.Key.f9:
-                    self.play_current_and_advance()
-                elif key == keyboard.Key.f8:
-                    self.replay_last()
-                elif key == keyboard.Key.f10:
-                    self.stop_audio()
-                elif key == keyboard.Key.f7:
-                    self.step_index(-1)
-                elif key == keyboard.Key.f11:
-                    self.step_index(1)
-            except Exception as exc:
-                self.last_event = f"Hotkey error: {exc}"
+        def poll_win32_keys():
+            import ctypes
+            import time
 
-        self._kb_listener = keyboard.Listener(on_press=on_key_press)
-        self._kb_listener.daemon = True
-        self._kb_listener.start()
+            user32 = ctypes.windll.user32
 
-        if enable_mouse_x2:
-            def on_click(x, y, button, pressed):
-                if pressed and button == mouse.Button.x2:
-                    self.play_current_and_advance()
-                elif pressed and button == mouse.Button.x1:
-                    self.replay_last()
+            def is_down(vk: int) -> bool:
+                return bool(user32.GetAsyncKeyState(vk) & 0x8000)
 
-            self._mouse_listener = mouse.Listener(on_click=on_click)
-            self._mouse_listener.daemon = True
-            self._mouse_listener.start()
+            # Virtual-key codes
+            VK_MENU = 0x12      # Alt
+            VK_SPACE = 0x20
+            VK_LEFT = 0x25
+            VK_RIGHT = 0x27
+            VK_R = 0x52
+            VK_S = 0x53
+            VK_F7 = 0x76
+            VK_F8 = 0x77
+            VK_F9 = 0x78
+            VK_F10 = 0x79
+            VK_F11 = 0x7A
+            VK_XBUTTON1 = 0x05  # Mouse Back side button
+            VK_XBUTTON2 = 0x06  # Mouse Forward side button
 
+            prev_state: Dict[str, bool] = {}
+            last_fire: Dict[str, float] = {}
+            debounce_sec = 0.28
+
+            while not self._stop_poll.is_set():
+                try:
+                    alt = is_down(VK_MENU)
+                    combos = {
+                        "play": is_down(VK_F9) or (alt and is_down(VK_SPACE)) or (enable_mouse_x2 and is_down(VK_XBUTTON2)),
+                        "replay": is_down(VK_F8) or (alt and is_down(VK_R)) or (enable_mouse_x2 and is_down(VK_XBUTTON1)),
+                        "stop": is_down(VK_F10) or (alt and is_down(VK_S)),
+                        "prev": is_down(VK_F7) or (alt and is_down(VK_LEFT)),
+                        "next": is_down(VK_F11) or (alt and is_down(VK_RIGHT)),
+                    }
+                    now = time.monotonic()
+                    for action, down in combos.items():
+                        was_down = prev_state.get(action, False)
+                        if down and not was_down and (now - last_fire.get(action, 0.0) >= debounce_sec):
+                            last_fire[action] = now
+                            if action == "play":
+                                self.play_current_and_advance()
+                            elif action == "replay":
+                                self.replay_last()
+                            elif action == "stop":
+                                self.stop_audio()
+                            elif action == "prev":
+                                self.step_index(-1)
+                            elif action == "next":
+                                self.step_index(1)
+                        prev_state[action] = down
+                except Exception as exc:
+                    self.last_event = f"Hotkey poll error: {exc}"
+                time.sleep(0.03)
+
+        self._poll_thread = threading.Thread(target=poll_win32_keys, daemon=True)
+        self._poll_thread.start()
         self.active = True
-        mouse_note = " + Mouse Side Buttons (Forward=Play, Back=Replay)" if enable_mouse_x2 else ""
-        self.last_event = f"🟢 LIVE HOTKEYS ARMED: F9=Play Next | F8=Replay | F10=Stop | F7/F11=Skip{mouse_note}"
+        mouse_note = " + Mouse Side Buttons" if enable_mouse_x2 else ""
+        self.last_event = (
+            f"🟢 ARMED (Win32 Global): F9 or Alt+Space = Play | F8 or Alt+R = Replay | "
+            f"F10 or Alt+S = Stop | F7/F11 or Alt+←/→ = Skip{mouse_note}"
+        )
         return self.last_event
 
     def stop_listeners(self) -> str:
-        if self._kb_listener is not None:
-            self._kb_listener.stop()
-            self._kb_listener = None
-        if self._mouse_listener is not None:
-            self._mouse_listener.stop()
-            self._mouse_listener = None
+        self._stop_poll.set()
+        if self._poll_thread is not None and self._poll_thread.is_alive():
+            self._poll_thread.join(timeout=0.5)
+        self._poll_thread = None
         self.active = False
         self.last_event = "⚪ Hotkeys disarmed."
         return self.last_event
 
     def render_teleprompter_markdown(self) -> str:
+        import time
+
         with self._lock:
-            state = "🟢 **ARMED (Works even when PDF / Jupyter is focused!)**" if self.active else "⚪ **DISARMED**"
+            state = (
+                "🟢 **ARMED** (`F9` / `Alt+Space` = Play | `F8` / `Alt+R` = Replay | `F10` / `Alt+S` = Stop)"
+                if self.active
+                else "⚪ **DISARMED** *(Click `🟢 ARM GLOBAL HOTKEYS` to enable keyboard shortcuts)*"
+            )
             if not self.deck or not self.deck.cues:
                 return f"{state}\n\n_No presentation cue deck loaded yet._"
 
             total = len(self.deck.cues)
             rendered = sum(1 for c in self.deck.cues if c.audio_path and Path(c.audio_path).exists())
             header = (
-                f"{state} | **Deck:** `{self.deck.project_name}` | "
-                f"**Pre-rendered Audio:** `{rendered}/{total}` | **Status:** {self.last_event}\n\n---\n"
+                f"{state}  \n"
+                f"**Deck:** `{self.deck.project_name}` | **Pre-rendered:** `{rendered}/{total}` | **Status:** {self.last_event}\n\n---\n"
             )
 
+            # While speaking, keep the main panel LOCKED on the currently speaking cue!
+            if self.is_playing and self.playing_idx is not None and self.playing_idx < total:
+                cur = self.deck.cues[self.playing_idx]
+                rem = max(0.0, self.play_end_time - time.monotonic())
+                nxt = self.deck.cues[self.playing_idx + 1] if self.playing_idx + 1 < total else None
+                body = (
+                    f"## 🔊 NOW SPEAKING (`{self.playing_idx + 1}/{total}`): `[{cur.cue_id}]` — **`{cur.speaker_id}`** "
+                    f"*(⏳ {rem:.1f}s remaining)*\n"
+                    f"**📄 Location:** `{cur.source}`\n\n"
+                    f"### 👉 POINT TO NOW:\n> **{cur.point_to}**\n\n"
+                    f"### 🗣️ SPEAKING NOW:\n> {cur.humanized_text or cur.clean_text}\n"
+                )
+                if cur.transition_note:
+                    body += f"\n**➡️ AFTER THIS FINISHES:** `{cur.transition_note}`\n"
+                if nxt:
+                    body += f"\n---\n**⏭ Up Next (auto-switches when voice ends):** `[{nxt.cue_id}]` (`{nxt.speaker_id}`) — `{nxt.source}` — _{nxt.point_to[:110]}_"
+                return header + body
+
             if self.current_idx >= total:
-                return header + "## 🎉 Presentation Complete!\nPress **F8** to replay the final cue or click **Reset to Start**."
+                return header + "## 🎉 Presentation Complete!\nPress **F8 / Alt+R** to replay the final cue or click **Reset to #1**."
 
             cur = self.deck.cues[self.current_idx]
             nxt = self.deck.cues[self.current_idx + 1] if self.current_idx + 1 < total else None
-            ready_badge = f"🔊 READY (`{cur.duration_sec}s`)" if (cur.audio_path and Path(cur.audio_path).exists()) else "⚠️ NOT RENDERED YET"
+            ready_badge = (
+                f"🔊 READY (`{cur.duration_sec}s`)"
+                if (cur.audio_path and Path(cur.audio_path).exists())
+                else "⚠️ NOT RENDERED YET"
+            )
 
             body = (
-                f"## NEXT TO PLAY (`{self.current_idx + 1}/{total}`): `[{cur.cue_id}]` — Speaker: **`{cur.speaker_id}`** ({ready_badge})\n"
+                f"## 🟢 READY TO PLAY (`{self.current_idx + 1}/{total}`): `[{cur.cue_id}]` — **`{cur.speaker_id}`** ({ready_badge})\n"
                 f"**📄 Location:** `{cur.source}`\n\n"
-                f"### 👉 POINT TO:\n> **{cur.point_to}**\n\n"
-                f"### 🗣️ SPOKEN SCRIPT:\n> {cur.humanized_text or cur.clean_text}\n"
+                f"### 👉 MOVE CURSOR TO:\n> **{cur.point_to}**\n\n"
+                f"### 🗣️ WILL SAY (Press `F9` or `Alt+Space`):\n> {cur.humanized_text or cur.clean_text}\n"
             )
             if cur.transition_note:
                 body += f"\n**➡️ AFTER THIS CUE:** `{cur.transition_note}`\n"
             if nxt:
-                body += f"\n---\n**Up Next:** `[{nxt.cue_id}]` (`{nxt.speaker_id}`) — `{nxt.source}` — _{nxt.point_to[:120]}_"
+                body += f"\n---\n**⏭ Up Next:** `[{nxt.cue_id}]` (`{nxt.speaker_id}`) — `{nxt.source}` — _{nxt.point_to[:110]}_"
             return header + body

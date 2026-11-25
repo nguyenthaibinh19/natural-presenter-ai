@@ -119,10 +119,10 @@ def build_llm_system_prompt(
 You are adapting paragraph {paragraph_index} of {total_paragraphs} from a clean written presentation script into natural spoken English matching THIS EXACT SPEAKER's personal speaking rhythm.
 
 Rules (STRICT):
-1. Preserve 100% of the final facts, numbers, technical terms, and core meaning.
-2. Make ALL symbols, numbers, and acronyms TTS-ready:
-   - Spell out letter-by-letter acronyms with spaces (e.g., "MSE" -> "M S E", "CNN" -> "C N N", "GPU" -> "G P U", "API" -> "A P I", "MAE" -> "M A E").
-   - Expand symbols and expressions ("$2.5M" -> "two point five million dollars", "24%" -> "twenty-four percent", "3x3" -> "three by three", "Q3" -> "Q three").
+1. Preserve 100% of ALL numbers, digits, dimensions, metrics, and facts EXACTLY (NEVER change "32 by 32" to "8 by 8" or misread "1,024" — keep numbers like 32, 255, 1,024, 0.0056 as exact digits so you NEVER make arithmetic mistakes).
+2. Make symbols and acronyms TTS-ready:
+   - Spell out letter-by-letter acronyms with spaces (e.g., "MSE" -> "M S E", "CNN" -> "C N N", "GPU" -> "G P U", "RGB" -> "R G B", "API" -> "A P I").
+   - Expand symbols ("%" -> "percent", "3x3" -> "3 by 3", "Q3" -> "Q three", "$" -> "dollars"). Do NOT rewrite multi-digit numbers into wrong words.
 {disfluency_rules}
 4. Tone: {tone}. Speaker pace: {profile.speaking_rate_wpm} WPM (~{profile.avg_words_per_pause} words per natural pause).
 5. Return ONLY the rewritten spoken paragraph text — no commentary, no labels, no markdown quotes.

@@ -31,3 +31,9 @@ Durable lessons captured during development so future contributors and AI agents
 
 10. **Acronym Pronunciation in G2P-Free F5-TTS (`MSE` → *"m-se"*) (2026-11-25):**  
     Because F5-TTS reads raw characters without a G2P dictionary, uppercase acronyms like `MSE` or `CNN` can be mispronounced as single words. Applying a dual-layer editable lexicon (`config/pronunciation_map.json`, mapping `MSE` → `M S E`, `ReLU` → `ray-loo`, etc.) in both Stage 1 and Stage 2 fixes this cleanly without retraining.
+
+11. **Reference Clips Ending Mid-Sentence Leak Trailing Words into F5-TTS Output (2026-11-25):**  
+    When `refs/presentation_ref.txt` ends with a cut-off word (`"...Each example has..."`), F5-TTS leaks `"has"` into the start of every generated clip. Always select complete-sentence reference clips ending cleanly on `.`, `!`, or `?` (never `...`).
+
+12. **Windows Laptop Global Hotkeys & Teleprompter Sync (2026-11-25):**  
+    `pynput` hooks can fail silently or be hijacked by laptop Fn-Lock media keys (`F9`/`F10`). Native Win32 `GetAsyncKeyState` polling supporting BOTH `F7`–`F11` and laptop-safe `Alt+Space` / `Alt+R` / `Alt+S` / `Alt+←/→` works reliably across all windows. Also keep the teleprompter locked on `🔊 NOW SPEAKING` for the clip's full duration before auto-advancing to the next cue.

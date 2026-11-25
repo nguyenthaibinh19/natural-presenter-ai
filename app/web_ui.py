@@ -925,17 +925,17 @@ def build_ui() -> gr.Blocks:
                         value=False,
                         label="Also trigger with Mouse Side Buttons (Forward=Play, Back=Replay)",
                     )
-                    cue_arm_btn = gr.Button("🟢 ARM GLOBAL HOTKEYS (F9/F8/F10)", variant="primary")
+                    cue_arm_btn = gr.Button("🟢 ARM GLOBAL HOTKEYS (F9 / Alt+Space)", variant="primary")
                     cue_disarm_btn = gr.Button("⚪ Disarm Hotkeys")
 
                 teleprompter_md = gr.Markdown(live_controller.render_teleprompter_markdown())
 
                 with gr.Row():
-                    btn_prev = gr.Button("⏮ Prev (F7)")
-                    btn_play = gr.Button("▶ Play Current & Next (F9)", variant="primary")
-                    btn_replay = gr.Button("🔁 Replay Last (F8)")
-                    btn_stop = gr.Button("⏹ Stop (F10)")
-                    btn_next = gr.Button("⏭ Skip Next (F11)")
+                    btn_prev = gr.Button("⏮ Prev (F7 / Alt+←)")
+                    btn_play = gr.Button("▶ Play Current (F9 / Alt+Space)", variant="primary")
+                    btn_replay = gr.Button("🔁 Replay (F8 / Alt+R)")
+                    btn_stop = gr.Button("⏹ Stop (F10 / Alt+S)")
+                    btn_next = gr.Button("⏭ Next (F11 / Alt+→)")
                     btn_reset = gr.Button("↺ Reset to #1")
 
                 cue_action_status = gr.Textbox(label="Presenter Status", interactive=False)
@@ -1025,7 +1025,7 @@ def build_ui() -> gr.Blocks:
                     outputs=[cue_action_status, teleprompter_md],
                 )
                 btn_reset.click(
-                    fn=lambda: (setattr(live_controller, "current_idx", 0) or "Reset to Cue #1", live_controller.render_teleprompter_markdown()),
+                    fn=lambda: (live_controller.reset_to_start(), live_controller.render_teleprompter_markdown()),
                     outputs=[cue_action_status, teleprompter_md],
                 )
                 cue_humanize_all_btn.click(
