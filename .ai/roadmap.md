@@ -1,7 +1,7 @@
 # Roadmap
 
 ## Phase 1 — MVP (Single Speaker `vn_01` on Multi-Speaker Architecture)
-- [x] Private GitHub repo created (`nguyenthaibinh19/natural-presenter-ai`) & primary workspace moved to `D:\natural-presenter-ai`
+- [x] GitHub repo created (`nguyenthaibinh19/natural-presenter-ai`) & portable local workspace initialized
 - [x] Human guide (`docs/PROJECT_GUIDE.md`), AI spec (`docs/AI_AGENT_SPEC.md`), recording guide (`docs/RECORDING_GUIDE.md`), and `.ai/` memory established
 - [x] Pydantic schemas (`src/schemas.py`) and dataset scripts (`scripts/00`–`04`) implemented
 - [x] Local Conda environment (`presenter-ai`) set up with PyTorch CUDA 12.8 for RTX 5060 Laptop (verified GPU pipeline end-to-end)

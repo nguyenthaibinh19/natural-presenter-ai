@@ -606,7 +606,7 @@ class LiveCueController:
                 if buf.value and buf.value.lower() != "default":
                     desktop_warning = (
                         f" ⚠️ WARNING: Running in isolated desktop '{buf.value}' — Windows blocks global "
-                        f"hotkeys here! Double-click D:\\natural-presenter-ai\\start_presenter.bat instead."
+                        f"hotkeys here! Double-click start_presenter.bat in the repo root instead."
                     )
             except Exception:
                 pass

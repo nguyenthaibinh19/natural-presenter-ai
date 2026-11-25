@@ -1,9 +1,9 @@
 # Current State
 
-**Last Updated:** 2026-11-24  
-**Active Phase:** Phase 1 — MVP Setup & First Speaker (`vn_01`) Dataset Preparation  
-**Repository:** `https://github.com/nguyenthaibinh19/natural-presenter-ai` (Private)  
-**Primary Local Path:** `D:\natural-presenter-ai`
+**Last Updated:** 2026-11-25  
+**Active Phase:** Phase 2 — Portfolio Showcase Ready + Multi-Speaker Expansion (`vn_02` / Ege)  
+**Repository:** `https://github.com/nguyenthaibinh19/natural-presenter-ai`  
+**Environment:** Local Windows dev laptop (RTX 5060 Laptop 8GB VRAM) + Cloud Colab fine-tuning
 
 ---
 
@@ -28,6 +28,9 @@
 - `app/web_ui.py` — Local Gradio Web UI (`http://127.0.0.1:7860`) with four tabs: **Presentation Studio**, **Dataset QA Reviewer**, **Pronunciation Dictionary**, and **Cue Presenter (Live OBS)** (pre-loaded with 22 parsed cues from `lab2_demo`).
 - `scripts/05_train_cloud.py` — Prepares F5-TTS fine-tuning dataset (`metadata.csv`, `duration.json`) and invokes `f5-tts_finetune-cli` with pretrained 2545-token vocab (`--tokenizer pinyin`, raw chars for English), `--num_warmup_updates 100`, and `--bnb_optimizer`.
 - `scripts/06_export_humanizer_sft.py` — Exports verified `(clean_text -> raw_text)` pairs across speakers into ChatML JSONL (`profiles/humanizer_sft.jsonl`) for optional future QLoRA fine-tuning of Gemma/Qwen Stage 1 models.
+- `scripts/07_generate_showcase_samples.py` — Generates 6 neutral portfolio audio comparison clips into `hf_space/samples/` for the free-CPU Hugging Face Spaces demo.
+- `hf_space/` — Ready-to-deploy free CPU Hugging Face Spaces portfolio showcase (`app.py`, `README.md`, `requirements.txt`) with pre-rendered audio comparison slots and a live CPU Stage 1 playground.
+- `LICENSE` — MIT License; `README.md` upgraded to portfolio showcase format with Mermaid architecture diagram, verified benchmarks, and Responsible AI / Voice Consent section; `start_presenter.bat` made portable across machines.
 - `notebooks/05_finetune_f5tts_colab.ipynb` — Ready-to-run Google Colab Pro notebook (NVIDIA L4 / Tesla T4) with Google Drive auto-checkpointing and Cell 6 slim FP16 `.safetensors` exporter (~643 MB).
 - `notebooks/05_finetune_f5tts_jupyter_l40.ipynb` — Ready-to-run university JupyterLab notebook tuned for **NVIDIA L40 (44.4 GB VRAM, PyTorch 2.6+cu124)** (`batch_size=6400` frames, `bf16`, full AdamW, ~15–25 min total training, inline Zero-Shot vs. Fine-Tuned playback).
 - `.env.example` — Default Ollama/Gemma Stage 1 configuration template.
@@ -40,7 +43,7 @@
 
 ### Local Environment Status (Primary Dev Machine)
 - **GPU:** NVIDIA GeForce RTX 5060 Laptop GPU (`8151 MiB` VRAM, Driver `610.71`, Blackwell `sm_120`).
-- **Conda Environment Configured:** `presenter-ai` (`C:\Users\mrbin\miniconda3\envs\presenter-ai`) with Python 3.11.18, FFmpeg 9.1.0, `torch==2.11.0+cu128`, `torchaudio==2.11.0+cu128`, `f5-tts==1.1.22`, `faster-whisper==1.2.1`, `silero-vad==6.3`, `gradio==6.32.0`, `pydantic==2.14.4`. Verified `torch.cuda.is_available() == True`.
+- **Conda Environment Configured:** `presenter-ai` (`%USERPROFILE%\miniconda3\envs\presenter-ai`) with Python 3.11.18, FFmpeg 9.1.0, `torch==2.11.0+cu128`, `torchaudio==2.11.0+cu128`, `f5-tts==1.1.22`, `faster-whisper==1.2.1`, `silero-vad==6.3`, `gradio==6.32.0`, `pydantic==2.14.4`, `pynput==1.8.2`, `pypdf==7.1.1`. Verified `torch.cuda.is_available() == True`.
 - **Local LLM Configured (Stage 1):** **Ollama `0.40.18`** installed locally with **`gemma3:4b`** pulled and verified live at `http://localhost:11434/v1` (`.env` configured). Automatically expands symbols (`Q3` → `Q three`, `24%` → `24 percent`, `3x3` → `three by three`) and injects speaker-specific fillers from `style_profile.json`. `173` verified `vn_01` pairs exported to `profiles/humanizer_sft.jsonl` for future optional Gemma QLoRA fine-tuning.
 - **Initial Real Dataset Processed:**
   - `vn_01` (**Binh**): **173 / 174 Verified clips (26.65 min clean, 0 integrity errors — only `vn_01_0090` excluded)**:
