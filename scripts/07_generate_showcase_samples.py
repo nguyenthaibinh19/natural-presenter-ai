@@ -1,8 +1,7 @@
-"""Step 7 (Optional): Generate 6 neutral portfolio audio samples for the free-CPU Hugging Face Space.
+"""Step 7 (Optional): Generate 6 neutral portfolio audio samples for the free Hugging Face Static Space.
 
-By default, generates ONLY self-recorded author voice (`vn_01`) clips to strictly honor
-our Responsible AI & Voice Consent policy. Pass `--include-coauthor` only after receiving
-explicit co-author consent.
+Generates ONLY self-recorded author voice (`vn_01`) clips (`01`–`06`) to strictly honor
+our Responsible AI & Voice Consent policy (see `docs/VOICE_CONSENT.md`).
 
 Saves clips into `hf_space/samples/` (gitignored in GitHub via `*.wav`, ready to upload to HF Spaces).
 
@@ -66,13 +65,8 @@ def render_to(
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Generate neutral portfolio showcase WAV clips for hf_space/samples/.")
+    parser = argparse.ArgumentParser(description="Generate neutral vn_01-only portfolio showcase WAV clips for hf_space/samples/.")
     parser.add_argument("--only", default="", help="Optional filename prefix filter (e.g. '06' to render only clip 06).")
-    parser.add_argument(
-        "--include-coauthor",
-        action="store_true",
-        help="Opt-in: also render 06_multi_speaker_handoff.wav with vn_02 (requires explicit co-author consent).",
-    )
     args = parser.parse_args()
 
     def should_run(name: str) -> bool:
@@ -181,50 +175,7 @@ def main() -> None:
         sf.write(str(out6), combined, sr1, subtype="PCM_16")
         print(f"Saved {out6.name} ({len(combined) / sr1:.1f}s) -> Slide transition pause + self-repair")
 
-    # 7. Multi-Speaker Joint Presentation Handoff (Speaker 1 vn_01 -> Speaker 2 vn_02, consented per docs/VOICE_CONSENT.md)
-    if should_run("07_multi_speaker_handoff.wav") or (args.include_coauthor and should_run("07")):
-        w1, _ = synth.synthesize(
-            SynthesizeRequest(
-                speaker_id="vn_01",
-                humanized_script="So, uh, looking at model compression, pruning to F P sixteen cut the checkpoint down to six hundred forty-three megabytes with zero quality loss. Now I will, like, hand over to Ege for multi-speaker style profiles.",
-                ref_name="partA_natural_slow_ref",
-                speed=0.90,
-                nfe_step=32,
-            )
-        )
-        w2, _ = synth.synthesize(
-            SynthesizeRequest(
-                speaker_id="vn_02",
-                humanized_script="Thanks! Uh, every speaker has a completely separate profile, so, eh, my faster pace and Turkish-English accent stay totally independent from Binh's voice.",
-                speed=0.96,
-                nfe_step=32,
-            )
-        )
-        d1, sr1 = sf.read(str(w1))
-        d2, sr2 = sf.read(str(w2))
-        assert sr1 == sr2
-        combined = stitch_paragraphs(
-            [np.asarray(d1, dtype=np.float32), np.asarray(d2, dtype=np.float32)],
-            sr=sr1,
-            paragraph_pause_ms=700,
-        )
-        out7 = SAMPLES_DIR / "07_multi_speaker_handoff.wav"
-        sf.write(str(out7), combined, sr1, subtype="PCM_16")
-        print(f"Saved {out7.name} ({len(combined) / sr1:.1f}s) -> Multi-speaker handoff (consented)")
-
-    # 8. Speaker 2 (vn_02 — Ege) Independent Accent & Cadence Demo (146.6 WPM, uh / eh / um)
-    if should_run("08_ege_cadence_demo.wav"):
-        render_to(
-            synth,
-            "08_ege_cadence_demo.wav",
-            "vn_02",
-            "Hello everyone, uh, today I want to walk you through our C N N autoencoder results. Replacing max pooling with, eh, stride-two convolutions lowered test M S E by twenty-five percent across all three seeds.",
-            ref_name=None,
-            speed=0.96,
-            nfe_step=32,
-        )
-
-    print(f"\nShowcase samples ready in {SAMPLES_DIR}! Upload hf_space/ to Hugging Face Spaces.")
+    print(f"\nShowcase samples (vn_01 only) ready in {SAMPLES_DIR}! Upload hf_space/ to Hugging Face Spaces.")
 
 
 if __name__ == "__main__":
