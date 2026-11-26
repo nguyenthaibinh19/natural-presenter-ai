@@ -11,7 +11,9 @@
 
 Unlike commercial TTS APIs that flatten international speakers into generic, overly polished American/British radio voices, **Natural Presenter AI** preserves each speaker's **authentic non-native English accent** (e.g., Vietnamese, Turkish, Cypriot, Hungarian, Spanish), personal speaking pace, breaths, and **individualized hesitation patterns** (`uh`, `um`, `like`, `eh`, subtle self-repairs) — paired with a **zero-latency human-driven live OBS Cue Soundboard** for recording smooth technical demos across code and reports.
 
-> 🎧 **Interactive Audio Showcase & Live Stage 1 Playground:** **[Try on Hugging Face Spaces ↗](https://huggingface.co/spaces/nguyenthaibinh19/natural-presenter-ai-showcase)** *(Free Static Space — listen to Zero-Shot vs. Fine-Tuned `FT-001` A/B benchmarks & test acronym/hesitation adaptation in browser!)*
+> 🎬 **Watch the Full 1-Take AI-Narrated Demo & Listen to A/B Audio Benchmarks:**  
+> **[Open Interactive Portfolio Showcase on Hugging Face Spaces ↗](https://huggingface.co/spaces/nguyenthaibinh19/natural-presenter-ai-showcase)**  
+> *(Includes the full single-take OBS demo video — narrated 100% locally by the fine-tuned `FT-001` model via `F9` hotkeys — plus Zero-Shot vs. Fine-Tuned A/B listening tests and a live Stage 1 Playground!)*
 
 ---
 

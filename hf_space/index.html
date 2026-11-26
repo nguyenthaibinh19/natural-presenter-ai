@@ -266,6 +266,24 @@
       margin-top: auto;
     }
 
+    .video-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 18px 20px 20px;
+      box-shadow: var(--shadow);
+      margin-bottom: 24px;
+    }
+
+    .video-card video {
+      width: 100%;
+      border-radius: 12px;
+      background: #0f172a;
+      display: block;
+      margin-top: 12px;
+      max-height: 540px;
+    }
+
     /* Playground */
     .controls {
       display: grid;
@@ -447,16 +465,27 @@
     </header>
 
     <nav class="tabs" role="tablist">
-      <button class="tab-btn active" data-tab="audio" role="tab">1. Audio Benchmarks (Listen)</button>
+      <button class="tab-btn active" data-tab="audio" role="tab">1. Demo Video &amp; Audio Benchmarks</button>
       <button class="tab-btn" data-tab="playground" role="tab">2. Live Stage 1 Playground</button>
       <button class="tab-btn" data-tab="metrics" role="tab">3. Architecture &amp; Metrics</button>
     </nav>
 
-    <!-- TAB 1: AUDIO BENCHMARKS -->
+    <!-- TAB 1: DEMO VIDEO & AUDIO BENCHMARKS -->
     <section id="tab-audio" class="tab-panel active">
       <div class="notice">
-        <strong>Responsible AI &amp; Voice Consent:</strong> All 6 audio benchmarks below were generated locally on an RTX 5060 Laptop GPU (<code>nfe_step=32</code>) using exclusively the author's own self-recorded voice (<code>vn_01</code>, Vietnamese-English; see <code>docs/VOICE_CONSENT.md</code>). The local architecture supports isolated profiles for additional consented speakers, while no raw datasets or trained voice checkpoints are distributed publicly.
+        <strong>Responsible AI &amp; Voice Consent:</strong> The demo video narration and all 6 audio benchmarks below were generated locally on an RTX 5060 Laptop GPU (<code>nfe_step=32</code>) using exclusively the author's own self-recorded voice (<code>vn_01</code>, Vietnamese-English; see <code>docs/VOICE_CONSENT.md</code>). No raw datasets or trained voice checkpoints are distributed publicly.
       </div>
+
+      <article class="video-card">
+        <div class="card-header">
+          <h2 class="section-title" style="margin:0;">🎬 End-to-End Demo — Recorded Live in 1 Take with Natural Presenter AI</h2>
+          <span class="pill green">100% AI-Narrated · 0 ms Hotkey OBS Cue Presenter</span>
+        </div>
+        <p class="card-desc" style="margin-top:6px;">
+          Every word in this walkthrough is synthesized locally by the fine-tuned <code>FT-001</code> model (643 MB FP16) and triggered live via <code>F9</code> while smoothly navigating the UI — ending with an instant switch from casual hesitation (<code>uh/like</code>) to crisp, zero-filler executive polish.
+        </p>
+        <video controls preload="metadata" playsinline src="samples/demo_video.mp4"></video>
+      </article>
 
       <h2 class="section-title">A/B Listening Test — Zero-Shot vs. Fine-Tuned (<code>FT-001</code>)</h2>
       <div class="grid-2">

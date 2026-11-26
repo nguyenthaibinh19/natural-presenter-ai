@@ -18,6 +18,9 @@ data/
 *.flac
 *.m4a
 *.ogg
+*.mp4
+*.mkv
+*.webm
 
 # Model Checkpoints & Weights
 checkpoints/

@@ -47,6 +47,11 @@ def main() -> None:
         action="store_true",
         help="Create/keep the Space private instead of public.",
     )
+    parser.add_argument(
+        "--recreate",
+        action="store_true",
+        help="Delete and recreate the Space first so Git commit history starts completely fresh.",
+    )
     args = parser.parse_args()
 
     samples_dir = HF_SPACE_DIR / "samples"
@@ -74,6 +79,14 @@ def main() -> None:
     print(f"Preparing Space: https://huggingface.co/spaces/{args.repo_id} (private={args.private})")
     print(f"Allowlisted self-recorded audio samples ({len(wavs)}): {[p.name for p in wavs]}")
 
+    if args.recreate:
+        print(f"Deleting existing Space to wipe prior commit history: {args.repo_id}")
+        try:
+            api.delete_repo(repo_id=args.repo_id, repo_type="space")
+            print("Old Space deleted cleanly.")
+        except Exception as exc:
+            print(f"Note: delete_repo skipped/ignored ({exc})")
+
     api.create_repo(
         repo_id=args.repo_id,
         repo_type="space",
@@ -88,11 +101,13 @@ def main() -> None:
         repo_type="space",
         ignore_patterns=["__pycache__/*", "*.pyc", ".DS_Store", "app.py", "requirements.txt"],
         delete_patterns=["samples/*.wav"],
-        commit_message="Deploy Natural Presenter AI portfolio showcase (Static Space, vn_01 self-recorded voice only)",
+        commit_message="Initial public showcase: 1-take OBS demo video + 6 vn_01 audio benchmarks + live Stage 1 playground",
     )
 
-    remote_wavs = sorted(f for f in api.list_repo_files(repo_id=args.repo_id, repo_type="space") if f.endswith(".wav"))
-    print(f"Verified remote Space audio files ({len(remote_wavs)}): {remote_wavs}")
+    remote_media = sorted(
+        f for f in api.list_repo_files(repo_id=args.repo_id, repo_type="space") if f.endswith((".wav", ".mp4"))
+    )
+    print(f"Verified remote Space media files ({len(remote_media)}): {remote_media}")
     print(f"\nDEPLOY_OK: https://huggingface.co/spaces/{args.repo_id}")
 
 
