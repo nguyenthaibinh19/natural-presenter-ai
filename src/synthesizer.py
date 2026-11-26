@@ -64,7 +64,7 @@ def _sanitize_tts_punctuation(text: str) -> str:
     """
     out = text.replace("\u2014", ", ").replace("\u2013", ", ").replace(" -- ", ", ")
     out = out.replace("\u2018", "'").replace("\u2019", "'").replace("\u201c", '"').replace("\u201d", '"')
-    out = re.sub(r"\s*,\s*,+", ", ", out)
+    out = re.sub(r"\s*,\s*(?:,\s*)*", ", ", out)
     out = re.sub(r"\s+", " ", out).strip()
     return out
 
