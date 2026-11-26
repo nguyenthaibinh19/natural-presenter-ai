@@ -37,3 +37,6 @@ Durable lessons captured during development so future contributors and AI agents
 
 12. **Windows Laptop Global Hotkeys & Teleprompter Sync (2026-11-25):**  
     `pynput` hooks can fail silently or be hijacked by laptop Fn-Lock media keys (`F9`/`F10`). Native Win32 `GetAsyncKeyState` polling supporting BOTH `F7`–`F11` and laptop-safe `Alt+Space` / `Alt+R` / `Alt+S` / `Alt+←/→` works reliably across all windows — **ONLY when `app/web_ui.py` is launched on the user's real `Default` desktop** (via `start_presenter.bat`), NOT inside an isolated AI agent sandbox desktop (`exebox-*`, where Windows blocks `GetAsyncKeyState` and `GetCursorPos`). Keep the teleprompter locked on `🔊 NOW SPEAKING` for the clip's full duration before auto-advancing.
+
+13. **Em-Dashes (`—`) & Overlong Unpunctuated Clauses Cause Robotic Buzz in F5-TTS (2026-11-26):**  
+    Character-level `F5TTS_v1_Base` rarely sees typographic em-dashes (`—`) in training transcripts and its chunker does not split on `—`, causing 25–30 word unpunctuated chunks (>150 chars) to stretch inside a single diffusion window and produce metallic/robotic Vocos buzz. `_sanitize_tts_punctuation()` in `src/synthesizer.py` now automatically converts `—`/`–`/`--` → `, ` and smart quotes to ASCII before synthesis.

@@ -56,6 +56,19 @@ def stitch_paragraphs(
     return combined
 
 
+def _sanitize_tts_punctuation(text: str) -> str:
+    """Normalize typographic punctuation (em-dashes, smart quotes) so F5-TTS chunks cleanly.
+
+    Em-dashes (`—`) are out-of-distribution in character-level TTS training sets and stop
+    F5-TTS from splitting long clauses, which causes stretched attention and metallic/robotic buzz.
+    """
+    out = text.replace("\u2014", ", ").replace("\u2013", ", ").replace(" -- ", ", ")
+    out = out.replace("\u2018", "'").replace("\u2019", "'").replace("\u201c", '"').replace("\u201d", '"')
+    out = re.sub(r"\s*,\s*,+", ", ", out)
+    out = re.sub(r"\s+", " ", out).strip()
+    return out
+
+
 class PresentationSynthesizer:
     """Lazy-loading F5-TTS wrapper that caches the active model on local RTX 5060 GPU."""
 
@@ -133,14 +146,14 @@ class PresentationSynthesizer:
             else f"Zero-Shot F5-TTS | ref: {chosen_ref}"
         )
 
-        # Split by blank lines to insert natural slide/paragraph pauses, and apply pronunciation safety pass
+        # Split by blank lines to insert natural slide/paragraph pauses, sanitize punctuation, and apply pronunciation pass
         paragraphs = [
-            apply_pronunciation_map(p.strip())
+            _sanitize_tts_punctuation(apply_pronunciation_map(p.strip()))
             for p in re.split(r"\n\s*\n", req.humanized_script.strip())
             if p.strip()
         ]
         if not paragraphs:
-            paragraphs = [apply_pronunciation_map(req.humanized_script.strip())]
+            paragraphs = [_sanitize_tts_punctuation(apply_pronunciation_map(req.humanized_script.strip()))]
 
         t0 = time.perf_counter()
         para_wavs: List[np.ndarray] = []
