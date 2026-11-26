@@ -135,7 +135,7 @@ def build_showcase() -> gr.Blocks:
         gr.Markdown(
             "# 🎙️ Natural Presenter AI — Portfolio Showcase\n"
             "**100% Local, Accent-Preserving, Multi-Speaker AI Voice Presentation Studio**  \n"
-            "Built by **Thai Binh Nguyen & Ege Deniz** | "
+            "Built by **Thai Binh Nguyen** | "
             "[GitHub Repository](https://github.com/nguyenthaibinh19/natural-presenter-ai)\n\n"
             "> This Space runs on **free CPU** with pre-rendered audio benchmarks and a live Stage 1 playground. "
             "Full local synthesis runs faster than real time on an 8GB laptop GPU (RTX 5060)."

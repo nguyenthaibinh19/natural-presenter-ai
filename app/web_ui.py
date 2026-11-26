@@ -1058,13 +1058,13 @@ def build_ui() -> gr.Blocks:
                 with gr.Accordion("Import Cue Script from ChatGPT (.md / Paste Text — Recommended)", open=False):
                     gr.Markdown(
                         "Ask ChatGPT to format your presentation using **`docs/CUE_SCRIPT_TEMPLATE.md`**, "
-                        "then paste the output below (or upload `.md`). Friendly speaker names like `binh` / `ege` auto-resolve!"
+                        "then paste the output below (or upload `.md`). Friendly speaker names like `binh` / `speaker_02` auto-resolve!"
                     )
                     imp_md_name = gr.Textbox(label="Project Name", placeholder="e.g., lab3_presentation")
                     imp_md_text = gr.Textbox(
                         label="Paste Markdown Cue Script here",
                         lines=10,
-                        placeholder="## 01 | speaker: ege | location: Notebook Cell 4\nPOINT TO: ...\nSAY: ...\nNEXT: ...",
+                        placeholder="## 01 | speaker: vn_01 | location: Notebook Cell 4\nPOINT TO: ...\nSAY: ...\nNEXT: ...",
                     )
                     imp_md_file = gr.File(
                         label="Or Upload .md Cue Script File",

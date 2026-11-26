@@ -17,7 +17,7 @@ Implement a **Pre-Rendered Cue Soundboard & Global Hotkey Presenter (`src/cue_pr
    - `F8`: Replay previous cue.
    - `F10`: Stop audio immediately.
    - `F7` / `F11`: Step back / skip forward without playing.
-4. **Multi-Speaker Joint Presentations:** A single human operator can record a seamless two-speaker presentation (e.g., Ege + Binh) in one continuous take, with each cue speaking in its assigned speaker's voice.
+4. **Multi-Speaker Joint Presentations:** A single human operator can record a seamless two-speaker presentation (e.g., Speaker A + Speaker B) in one continuous take, with each cue speaking in its assigned speaker's voice.
 
 ## Consequences
 - Zero inference latency during live recording; 100% natural cursor motion and scrolling.

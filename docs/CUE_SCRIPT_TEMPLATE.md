@@ -15,7 +15,7 @@ Follow the exact Markdown Cue Script format defined in docs/CUE_SCRIPT_TEMPLATE.
 
 Presentation details:
 - Speakers & parts:
-  - ege (vn_02): Introduction, data/code setup, Exercise 1, Exercise 3, Conclusion
+  - speaker_02 (vn_02): Introduction, data/code setup, Exercise 1, Exercise 3, Conclusion
   - binh (vn_01): Bottleneck analysis, Exercise 2 (code + results)
 - Target total speaking length: ~5 minutes (keep each cue crisp: 1–3 sentences, ~15–45 words).
 
@@ -37,7 +37,7 @@ STRICT FORMAT RULES:
 
 | Field | Required? | Description |
 | :--- | :--- | :--- |
-| `## <CUE_ID> \| speaker: ... \| location: ...` | **Yes** | Unique short ID (`01`, `N2`, `B1`, etc.), speaker ID or display name (`vn_01` / `binh`, `vn_02` / `ege`, `es_01`, etc.), optional `ref: <ref_name>`, and screen location (`Report Page 1`, `Notebook Cell 10`). |
+| `## <CUE_ID> \| speaker: ... \| location: ...` | **Yes** | Unique short ID (`01`, `N2`, `B1`, etc.), speaker ID or display name (`vn_01` / `binh`, `speaker_02`, `es_01`, etc.), optional `ref: <ref_name>`, and screen location (`Report Page 1`, `Notebook Cell 10`). |
 | `POINT TO:` | **Yes** | Shown in giant bold text on your off-screen Teleprompter so you know exactly where to point the mouse while AI speaks. |
 | `SAY:` | **Yes** | Clean polished English text (1–3 sentences). Do NOT manually add `uh`/`um` here — Stage 1 (Gemma) injects each speaker's personal hesitation style automatically! Acronyms like `MSE`, `CNN`, `GPU`, `ReLU` are auto-normalized by `config/pronunciation_map.json`. |
 | `NEXT:` | Optional | Shown right after the cue to remind you to scroll, switch windows (`Report <-> Notebook`), or hand over to the next speaker. |
@@ -47,22 +47,22 @@ STRICT FORMAT RULES:
 ## 3. Complete Working Example (Copy-Paste Ready to Test in Tab 4)
 
 ```markdown
-## 01 | speaker: ege | location: Notebook Cell 4
+## 01 | speaker: speaker_02 | location: Notebook Cell 4
 POINT TO: Point to the saved output line "Train / validation / test: 48000 6000 6000" below cell 4, then move up to "/ 255.0".
 SAY: Hello everyone. We split the sixty thousand CIFAR-10 images eighty-ten-ten into training, validation, and test sets, and scaled pixel values to zero through one by dividing by 255.
 NEXT: Scroll down to Notebook Cell 6.
 
-## 02 | speaker: ege | location: Notebook Cell 6
+## 02 | speaker: speaker_02 | location: Notebook Cell 6
 POINT TO: Trace lines 14–19 in encoder_layers (Conv2d, pool1, Conv2d, pool2, latent Conv2d), then stop on nn.ReLU() and nn.Sigmoid().
 SAY: The encoder uses 3 by 3 convolutions and max pooling to reduce the image from 32 by 32 down to 8 by 8, ending in a central layer with 16 channels, or 1,024 values. Hidden layers use ReLU, and the decoder upsamples back to RGB with a sigmoid output.
 NEXT: Scroll down to Notebook Cell 8.
 
-## 03 | speaker: ege | location: Notebook Cell 8
+## 03 | speaker: speaker_02 | location: Notebook Cell 8
 POINT TO: Point to nn.MSELoss() on line 1, move to torch.optim.Adam on line 23, then point to best_state on line 47.
 SAY: We train with MSE and Adam for twenty epochs per run across three random seeds, keeping the checkpoint with the lowest validation error.
 NEXT: Switch from Notebook to Report Page 2 (Figure 1).
 
-## 04 | speaker: ege | location: Report Page 2
+## 04 | speaker: speaker_02 | location: Report Page 2
 POINT TO: Trace the baseline curve in the top-left panel of Figure 1, then point to test MSE 0.005629 above the plot.
 SAY: The baseline error drops quickly in the first three epochs, then improves more slowly while training and validation curves stay close. Mean test MSE across three seeds is 0.0056.
 NEXT: Hand over to Binh and jump to Report Page 1 (Table 1).
@@ -80,9 +80,9 @@ NEXT: Switch back to Report Page 4 (Table 3 and Figure 3).
 ## 07 | speaker: binh | ref: partA_natural_slow_ref | location: Report Page 4
 POINT TO: Point to spatial4, baseline, and spatial16 in the Test MSE column of Table 3, then point to strided.
 SAY: Spatial16 achieved 59 percent lower test MSE than baseline while keeping the exact same 4,911 parameters. At the same latent size, replacing max pooling with stride-two convolutions reduced error by about 25 percent across all three seeds.
-NEXT: Hand over to Ege and continue to Report Page 5.
+NEXT: Hand over to Speaker 2 and continue to Report Page 5.
 
-## 08 | speaker: ege | location: Report Page 7 (Conclusion)
+## 08 | speaker: speaker_02 | location: Report Page 7 (Conclusion)
 POINT TO: Point to the reconstruction and colourisation summary paragraphs in Section 5.
 SAY: Overall, we learned that both latent spatial resolution and how we downsample strongly affect reconstruction quality. For colourisation, predicting chroma while reusing input luminance clearly outperformed direct RGB. Thank you for listening.
 NEXT: Stop OBS recording.

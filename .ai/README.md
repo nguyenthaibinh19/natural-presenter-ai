@@ -48,7 +48,5 @@ See [`procedures/HOW_TO_UPDATE_PROJECT_MEMORY.md`](procedures/HOW_TO_UPDATE_PROJ
 | [roadmap.md](roadmap.md) | Phased execution plan (MVP -> Multi-Accent -> Product Polish) |
 | [experiments.md](experiments.md) | Log of TTS LoRA fine-tuning runs and listening evaluations |
 | [lessons.md](lessons.md) | Durable engineering lessons learned |
-| [decisions/](decisions/) | Immutable Architecture Decision Records (`ADR-001` through `ADR-004`) |
+| [decisions/](decisions/) | Immutable Architecture Decision Records (`ADR-001` through `ADR-006`) |
 | [procedures/HOW_TO_UPDATE_PROJECT_MEMORY.md](procedures/HOW_TO_UPDATE_PROJECT_MEMORY.md) | Rules for keeping `.ai/` continuously updated |
-| [../docs/EGE_ONBOARDING_AND_AI_BRIEF.md](../docs/EGE_ONBOARDING_AND_AI_BRIEF.md) | Onboarding brief & active task tracks for Ege and Ege's AI assistant |
-| [../docs/PROPOSALS_AND_SYNC.md](../docs/PROPOSALS_AND_SYNC.md) | Shared Binh ↔ Ege proposal & approval board |

@@ -1,7 +1,7 @@
 # Current State
 
 **Last Updated:** 2026-11-25  
-**Active Phase:** Phase 2 — Portfolio Showcase Ready + Multi-Speaker Expansion (`vn_02` / Ege)  
+**Active Phase:** Phase 2 — Public Portfolio Showcase & Multi-Accent Readiness  
 **Repository:** `https://github.com/nguyenthaibinh19/natural-presenter-ai`  
 **Environment:** Local Windows dev laptop (RTX 5060 Laptop 8GB VRAM) + Cloud Colab fine-tuning
 
@@ -12,9 +12,7 @@
 ### Documentation & Governance
 - `.ai/` durable project memory system initialized (modeled on `EnglishApp` conventions), including `ADR-001` through `ADR-006` and `experiments.md` (`FT-001` rated 9.5–10/10).
 - `AGENTS.md` — root auto-read entrypoint for AI coding agents.
-- `docs/EGE_ONBOARDING_AND_AI_BRIEF.md` — onboarding brief, copy-paste AI prompt, and active work tracks for Ege & Ege's AI assistant.
-- `docs/PROPOSALS_AND_SYNC.md` — shared Binh ↔ Ege proposal & approval board (`PROP-001`..`PROP-004` seeded).
-- `docs/PROJECT_GUIDE.md` — human-readable English guide for collaborators.
+- `docs/PROJECT_GUIDE.md` — human-readable English guide for contributors.
 - `docs/AI_AGENT_SPEC.md` — comprehensive machine-readable technical spec for ChatGPT / AI agents.
 - `docs/RECORDING_GUIDE.md` — speaker recording checklist (including iPhone 16 Lossless ALAC + soft room tips), 8 Part A spontaneous prompts, 18 Part B conversational scripts (~11–13 min across 3 sessions), and `--append` CLI workflow.
 - `docs/CUE_SCRIPT_TEMPLATE.md` — copy-paste ChatGPT prompt + complete working multi-speaker Markdown Cue Script example (`## <ID> | speaker: ... | location: ...` + `POINT TO:` / `SAY:` / `NEXT:`) for Tab 4 import.
@@ -53,11 +51,10 @@
     - Part B (scripted): 84 clips (12.93 min, iPhone 16 Lossless ALAC 34.7–38.0 dB SNR)
     - `style_profile.json` rebuilt (`102.7 WPM`, `9.0 words/pause`, fillers: `uh: 77.6%`, `like: 12.9%`, `um: 4.3%`, `actually: 4.3%`, `basically: 0.9%`, 12 verified few-shot examples).
     - **First Fine-Tuned Model Live Locally (`FT-001`):** `profiles/vn_01/lora/vn_01_model_4000_fp16.safetensors` (**643 MB**, pruned EMA FP16 from 4,020 updates / 60 epochs on Colab Tesla T4, final loss `0.408`). Verified on local RTX 5060: 6.5s audio synthesized in 5.3s (16 steps).
-  - `vn_02` (**Ege**): 30 WAV clips (4.5 min), curated ref clip `refs/presentation_ref.wav` (10.15s), `metadata.jsonl` & `style_profile.json` (`146.6 WPM`, fillers: `uh: 79.4%`, `eh: 11.8%`, `um: 8.8%`, 9 few-shot examples). Zero-Shot active; awaiting Ege's QA & additional recordings (`PROP-001`).
 
 ---
 
 ## What Does NOT Exist Yet (Next Up — Phase 2)
-1. Onboard Ege's expanded & QA-verified dataset (`vn_02` / `ege_01`, `PROP-001`) and fine-tune Ege's checkpoint (`FT-002`).
-2. Benchmark/tune Stage 1 prompt or QLoRA fine-tune Gemma on multi-speaker `humanizer_sft.jsonl` once Ege + more speakers are verified (`PROP-002`).
-3. Slide-by-slide multi-speaker presentation mode in Web UI (`PROP-004`).
+1. Optional onboarding of additional consented multi-accent speaker profiles (`es_01`, `hu_01`, etc.) using the exact same `profiles/<speaker_id>/` pipeline.
+2. Benchmark/tune Stage 1 prompt or optional QLoRA fine-tune Gemma on multi-speaker `humanizer_sft.jsonl`.
+3. Slide-by-slide multi-speaker presentation export mode in Web UI.

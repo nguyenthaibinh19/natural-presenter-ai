@@ -1,6 +1,6 @@
 # Speaker Recording Guide & Sample Presentation Scripts
 
-Use this guide whenever onboarding a new speaker (`vn_01`, `vn_02`, `ege_01`, `es_01`, `hu_01`, `cy_01`, etc.).  
+Use this guide whenever onboarding a new speaker (`vn_01`, `speaker_02`, `es_01`, `hu_01`, `cy_01`, etc.).  
 **Remember:** Audio realism is 70–80% of the final result. Speak **exactly like your real self** — do NOT force a fake American/British accent, and do NOT try to eliminate your natural pauses or `uh`/`um`/`eh` habits.
 
 ---

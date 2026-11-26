@@ -53,7 +53,7 @@ def _clean_ocr_text(text: str) -> str:
 
 
 def _infer_default_speaker(cue_id: str, primary_speaker: str = "vn_01", secondary_speaker: str = "vn_02") -> str:
-    """Assign Binh (vn_01) to B* and N5* cues; Ege (vn_02) to A*, C*, D*, N1..N4 by default."""
+    """Assign primary speaker (vn_01) to B* and N5* cues; secondary speaker to A*, C*, D*, N1..N4 by default."""
     cid = cue_id.upper()
     if cid.startswith("B") or cid.startswith("N5"):
         return primary_speaker
@@ -235,7 +235,7 @@ def build_presentation_deck(
 
 
 def resolve_speaker_alias(raw_speaker: str, profiles_root: Path = Path("profiles")) -> str:
-    """Resolve friendly names like 'binh' or 'ege' to their exact speaker_id (e.g., 'vn_01', 'vn_02')."""
+    """Resolve friendly names like 'binh' or 'speaker_02' to their exact speaker_id (e.g., 'vn_01', 'vn_02')."""
     token = raw_speaker.strip()
     if not token:
         return "vn_01"

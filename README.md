@@ -7,7 +7,7 @@
 [![Hugging Face Space](https://img.shields.io/badge/🤗%20Showcase-Hugging%20Face%20Spaces-yellow.svg)](https://huggingface.co/spaces/nguyenthaibinh19/natural-presenter-ai-showcase)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-**A 100% local, privacy-first, multi-accent AI voice presentation studio** built by **Thai Binh Nguyen** and **Ege Deniz**.
+**A 100% local, privacy-first, multi-accent AI voice presentation studio** built by **Thai Binh Nguyen**.
 
 Unlike commercial TTS APIs that flatten international speakers into generic, overly polished American/British radio voices, **Natural Presenter AI** preserves each speaker's **authentic non-native English accent** (e.g., Vietnamese, Turkish, Cypriot, Hungarian, Spanish), personal speaking pace, breaths, and **individualized hesitation patterns** (`uh`, `um`, `like`, `eh`, subtle self-repairs) — paired with a **zero-latency human-driven live OBS Cue Soundboard** for recording smooth technical demos across code and reports.
 
